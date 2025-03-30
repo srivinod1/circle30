@@ -1,0 +1,26 @@
+{
+    "version": 8,
+    "sources": {
+      "tomtom": {
+        "type": "vector",
+        "tiles": [
+          "https://api.tomtom.com/maps/orbis/map-display/tile/{z}/{x}/{y}.pbf?apiVersion=1&key=${process.env.NEXT_PUBLIC_TOMTOM_API_KEY}&view=Unified"
+        ],
+        "minzoom": 0,
+        "maxzoom": 22
+      }
+    },
+    "layers": [
+      {
+        "id": "roads",
+        "type": "line",
+        "source": "tomtom",
+        "source-layer": "roads",  // You may need to update this layer name
+        "paint": {
+          "line-color": "#FF5733",
+          "line-width": 1.5
+        }
+      }
+    ]
+  }
+  
