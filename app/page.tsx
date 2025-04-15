@@ -6,7 +6,8 @@ import AskAI from '@/components/AskAI';
 export default function Home() {
   const handleQuery = (query: string) => {
     console.log('User asked:', query);
-    // Future: send to OpenAI or display overlay
+    // We don't need to do anything here anymore since the AskAI component
+    // handles the API call directly
   };
 
   return (
