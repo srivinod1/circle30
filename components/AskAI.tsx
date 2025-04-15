@@ -19,25 +19,15 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
       const userMessage: Message = { role: 'user', content: input };
       setMessages(prev => [...prev, userMessage]);
       try {
-        const res = await fetch('https://7b10-2001-1c00-be00-d800-857-13fc-190d-f516.ngrok-free.app/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify({ message: input }),
+        const res = await fetch("http://localhost:5002/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: input })
         });
-
-        if (!res.ok) {
-          const errorText = await res.text();
-          throw new Error(`API error: ${res.status} ${res.statusText} - ${errorText}`);
-        }
-
         const data = await res.json();
         if (!data.response) {
           throw new Error('Invalid response format from AI agent');
         }
-
         const assistantMessage: Message = { role: 'assistant', content: data.response };
         setMessages(prev => [...prev, assistantMessage]);
         onQuery(input);
