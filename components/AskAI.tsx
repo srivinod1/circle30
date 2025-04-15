@@ -16,42 +16,24 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
     e.preventDefault();
     if (input.trim()) {
       setIsLoading(true);
-      // Add user message to the conversation
       const userMessage: Message = { role: 'user', content: input };
       setMessages(prev => [...prev, userMessage]);
-      
       try {
-        console.log('Sending request to AI agent...');
-        const payload = {
-          messages: [...messages, userMessage].map(msg => ({
-            role: msg.role,
-            content: msg.content
-          }))
-        };
-        console.log('Request payload:', payload);
-
         const res = await fetch('https://7b10-2001-1c00-be00-d800-857-13fc-190d-f516.ngrok-free.app/chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json'
           },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ message: input }),
         });
-        
+
         if (!res.ok) {
           const errorText = await res.text();
-          console.error('AI agent error response:', {
-            status: res.status,
-            statusText: res.statusText,
-            body: errorText
-          });
-          throw new Error(`API error: ${res.status} ${res.statusText}`);
+          throw new Error(`API error: ${res.status} ${res.statusText} - ${errorText}`);
         }
 
         const data = await res.json();
-        console.log('AI agent response:', data);
-
         if (!data.response) {
           throw new Error('Invalid response format from AI agent');
         }
@@ -60,17 +42,14 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
         setMessages(prev => [...prev, assistantMessage]);
         onQuery(input);
       } catch (error) {
-        console.error('Detailed error:', error);
         let errorMessage = 'Sorry, there was an error processing your request.';
-        
         if (error instanceof Error) {
           errorMessage += ` (${error.message})`;
         }
-        
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: errorMessage
-        }]);
+        setMessages(prev => [
+          ...prev,
+          { role: 'assistant', content: errorMessage }
+        ]);
       } finally {
         setIsLoading(false);
         setInput('');
