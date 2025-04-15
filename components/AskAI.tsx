@@ -107,11 +107,7 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
                 }`}
                 style={message.role === 'assistant' ? { whiteSpace: 'pre-line' } : {}}
               >
-                {message.role === 'assistant' ? (
-                  <ReactMarkdown>{message.content}</ReactMarkdown>
-                ) : (
-                  message.content
-                )}
+                {message.content}
               </div>
             ))}
             {isTyping && typingMessage !== null && (
