@@ -21,33 +21,55 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
       setMessages(prev => [...prev, userMessage]);
       
       try {
-        // Call the AI agent API
+        console.log('Sending request to AI agent...');
+        const payload = {
+          messages: [...messages, userMessage].map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
+        };
+        console.log('Request payload:', payload);
+
         const res = await fetch('https://7b10-2001-1c00-be00-d800-857-13fc-190d-f516.ngrok-free.app/chat', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json'
           },
-          body: JSON.stringify({
-            messages: [...messages, userMessage].map(msg => ({
-              role: msg.role,
-              content: msg.content
-            }))
-          }),
+          body: JSON.stringify(payload),
         });
         
         if (!res.ok) {
-          throw new Error('Failed to get response from AI');
+          const errorText = await res.text();
+          console.error('AI agent error response:', {
+            status: res.status,
+            statusText: res.statusText,
+            body: errorText
+          });
+          throw new Error(`API error: ${res.status} ${res.statusText}`);
         }
 
         const data = await res.json();
+        console.log('AI agent response:', data);
+
+        if (!data.response) {
+          throw new Error('Invalid response format from AI agent');
+        }
+
         const assistantMessage: Message = { role: 'assistant', content: data.response };
         setMessages(prev => [...prev, assistantMessage]);
         onQuery(input);
       } catch (error) {
-        console.error('Error calling AI agent:', error);
+        console.error('Detailed error:', error);
+        let errorMessage = 'Sorry, there was an error processing your request.';
+        
+        if (error instanceof Error) {
+          errorMessage += ` (${error.message})`;
+        }
+        
         setMessages(prev => [...prev, { 
           role: 'assistant', 
-          content: 'Sorry, there was an error processing your request.' 
+          content: errorMessage
         }]);
       } finally {
         setIsLoading(false);
@@ -57,10 +79,16 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
   };
 
   return (
-    <div className="fixed right-6 bottom-6 bg-white/10 backdrop-blur p-4 rounded-2xl shadow-xl w-[400px] max-w-[90%] z-50 max-h-[80vh] flex flex-col">
-      <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+    <div className="fixed right-6 top-[20vh] bottom-[20vh] bg-white/10 backdrop-blur p-4 rounded-2xl shadow-xl w-[400px] max-w-[90%] z-50 flex flex-col">
+      {/* Chat header */}
+      <div className="mb-4 pb-3 border-b border-white/20">
+        <h3 className="text-lg font-semibold">EV Assistant</h3>
+      </div>
+
+      {/* Messages container */}
+      <div className="flex-1 overflow-y-auto mb-4 space-y-4 custom-scrollbar">
         {messages.length === 0 ? (
-          <div className="text-gray-400 text-sm italic">
+          <div className="text-gray-400 text-sm italic p-3">
             Ask about EV charging access, underserved ZIP codes, and more...
           </div>
         ) : (
@@ -84,24 +112,27 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
         )}
       </div>
       
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2 mt-auto">
-        <input
-          type="text"
-          placeholder="Ask about EV charging access..."
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          className="flex-1 bg-white text-black placeholder-gray-500 outline-none px-4 py-2 rounded-lg"
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          className={`bg-indigo-600 text-white font-medium px-4 py-2 rounded-xl hover:bg-indigo-500 ${
-            isLoading ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          disabled={isLoading}
-        >
-          {isLoading ? 'Processing...' : 'Ask AI'}
-        </button>
+      {/* Input form */}
+      <form onSubmit={handleSubmit} className="mt-auto border-t border-white/20 pt-4">
+        <div className="flex flex-col gap-2">
+          <input
+            type="text"
+            placeholder="Ask about EV charging access..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            className="w-full bg-white/5 text-white placeholder-gray-400 outline-none px-4 py-2 rounded-lg border border-white/10 focus:border-indigo-500 transition-colors"
+            disabled={isLoading}
+          />
+          <button
+            type="submit"
+            className={`w-full bg-indigo-600 text-white font-medium px-4 py-2 rounded-xl hover:bg-indigo-500 transition-colors ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={isLoading}
+          >
+            {isLoading ? 'Processing...' : 'Ask AI'}
+          </button>
+        </div>
       </form>
     </div>
   );
