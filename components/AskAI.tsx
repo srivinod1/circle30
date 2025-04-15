@@ -79,10 +79,10 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
   };
 
   return (
-    <div className="fixed right-6 top-[20vh] bottom-[20vh] bg-white/10 backdrop-blur p-4 rounded-2xl shadow-xl w-[400px] max-w-[90%] z-50 flex flex-col">
+    <div className="fixed right-6 top-[20vh] bottom-[20vh] bg-gray-800 p-4 rounded-2xl shadow-xl w-[400px] max-w-[90%] z-50 flex flex-col text-white">
       {/* Chat header */}
-      <div className="mb-4 pb-3 border-b border-white/20">
-        <h3 className="text-lg font-semibold">EV Assistant</h3>
+      <div className="mb-4 pb-3 border-b border-gray-600">
+        <h3 className="text-lg font-semibold text-white">EV Assistant</h3>
       </div>
 
       {/* Messages container */}
@@ -97,8 +97,8 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
               key={index}
               className={`p-3 rounded-lg text-sm ${
                 message.role === 'user'
-                  ? 'bg-indigo-600/20 ml-4'
-                  : 'bg-white/5 mr-4'
+                  ? 'bg-gray-700 ml-4'
+                  : 'bg-gray-600 mr-4'
               }`}
             >
               {message.content}
@@ -106,21 +106,21 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
           ))
         )}
         {isLoading && (
-          <div className="bg-white/5 p-3 rounded-lg text-sm animate-pulse mr-4">
+          <div className="bg-gray-600 p-3 rounded-lg text-sm animate-pulse mr-4">
             Thinking...
           </div>
         )}
       </div>
       
       {/* Input form */}
-      <form onSubmit={handleSubmit} className="mt-auto border-t border-white/20 pt-4">
+      <form onSubmit={handleSubmit} className="mt-auto border-t border-gray-600 pt-4">
         <div className="flex flex-col gap-2">
           <input
             type="text"
             placeholder="Ask about EV charging access..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            className="w-full bg-white/5 text-white placeholder-gray-400 outline-none px-4 py-2 rounded-lg border border-white/10 focus:border-indigo-500 transition-colors"
+            className="w-full bg-gray-700 text-white placeholder-gray-400 outline-none px-4 py-2 rounded-lg border border-gray-600 focus:border-indigo-500 transition-colors"
             disabled={isLoading}
           />
           <button
