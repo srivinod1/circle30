@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -70,7 +71,11 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
                   : 'bg-gray-600 mr-4'
               }`}
             >
-              {message.content}
+              {message.role === 'assistant' ? (
+                <ReactMarkdown>{message.content}</ReactMarkdown>
+              ) : (
+                message.content
+              )}
             </div>
           ))
         )}
