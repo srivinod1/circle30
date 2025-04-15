@@ -70,6 +70,7 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
                   ? 'bg-gray-700 ml-4'
                   : 'bg-gray-600 mr-4'
               }`}
+              style={message.role === 'assistant' ? { whiteSpace: 'pre-line' } : {}}
             >
               {message.role === 'assistant' ? (
                 <ReactMarkdown>{message.content}</ReactMarkdown>
