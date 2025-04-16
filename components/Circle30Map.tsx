@@ -16,10 +16,14 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
     if (!mapContainer.current) return;
 
     try {
+      console.log('TomTom API Key status:', process.env.NEXT_PUBLIC_TOMTOM_API_KEY ? 'Present' : 'Missing');
       console.log('Initializing map...');
+
+      const apiKey = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
+      
       const map = new maplibregl.Map({
         container: mapContainer.current,
-        style: `https://api.tomtom.com/maps/basic/style/1/style.json?key=${process.env.NEXT_PUBLIC_TOMTOM_API_KEY}`,
+        style: `https://api.tomtom.com/style/1/style/22.2/basic_main.json?key=${apiKey}`,
         center: [-99.3832, 31.2504], // Texas
         zoom: 6
       });
