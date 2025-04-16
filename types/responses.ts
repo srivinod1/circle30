@@ -1,46 +1,51 @@
-import type { Feature, Geometry } from 'geojson';
+import type { Feature, Point, Polygon, GeoJsonProperties } from 'geojson';
 
-// Response types for the AI chat
-export interface AIResponse {
-  message: string;
-  visualization?: MapVisualization;
+// Style options for features
+export interface FeatureStyle {
+  color?: string;
+  fillColor?: string;
+  opacity?: number;
+  fillOpacity?: number;
+  weight?: number;
+  radius?: number;
 }
 
-export interface Visualization {
-  type: string;
-  data: MapVisualization;
-}
-
-export interface MapVisualization {
-  features: Array<Feature<Geometry, FeatureProperties>>;
-  config?: {
-    fitBounds?: boolean;
-  };
-}
-
-// Define our own properties interface
-export interface FeatureProperties {
+// Properties that can be attached to a feature
+export interface FeatureProperties extends GeoJsonProperties {
   title?: string;
   data?: Record<string, string | number>;
   style?: FeatureStyle;
 }
 
-export interface FeatureStyle {
-  color?: string;
-  fillColor?: string;
-  opacity?: number;
-  weight?: number;
+// Valid geometry types for our features
+export type ValidGeometry = Point | Polygon;
+
+// Our custom feature type
+export type MapFeature = Feature<ValidGeometry, FeatureProperties>;
+
+// Configuration for map visualization
+export interface MapVisualizationConfig {
+  fitBounds?: boolean;
+  center?: [number, number];
+  zoom?: number;
 }
 
-export interface Feature {
-  type: 'Feature';
-  geometry: GeoJSONGeometry;
-  properties: FeatureProperties;
+// Main visualization type
+export interface MapVisualization {
+  features: MapFeature[];
+  config?: MapVisualizationConfig;
 }
 
-export interface GeoJSONGeometry {
-  type: 'Point' | 'Polygon';
-  coordinates: number[] | number[][] | number[][][];
+// Response from the AI endpoint
+export interface AIResponse {
+  message: string;
+  visualization?: MapVisualization;
+}
+
+// Chat message type
+export interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
 }
 
 // Geometry types

@@ -1,15 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import type { AIResponse } from '../types/responses';
+import type { MapVisualization } from '../types/responses';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
+interface AIResponse {
+  text: string;
+  visualization?: MapVisualization;
+}
+
 interface AskAIProps {
-  onVisualizationUpdate: (visualizations: AIResponse['visualizations']) => void;
+  onVisualizationUpdate: (visualization: MapVisualization | undefined) => void;
 }
 
 export default function AskAI({ onVisualizationUpdate }: AskAIProps) {
@@ -21,54 +26,56 @@ export default function AskAI({ onVisualizationUpdate }: AskAIProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim()) {
-      setIsLoading(true);
-      const userMessage: Message = { role: 'user', content: input };
-      setMessages(prev => [...prev, userMessage]);
+    if (!input.trim()) return;
+
+    setIsLoading(true);
+    const userMessage: Message = { role: 'user', content: input };
+    setMessages(prev => [...prev, userMessage]);
+    
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: input })
+      });
+
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+
+      const data: AIResponse = await res.json();
       
-      try {
-        const res = await fetch("http://localhost:5002/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: input })
-        });
-
-        if (!res.ok) {
-          throw new Error(`API error: ${res.status}`);
-        }
-
-        const data: AIResponse = await res.json();
-        
-        // Start typing animation for text response
-        setIsTyping(true);
-        setTypingMessage('');
-        
-        // Animate the text response
-        typeAssistantMessage(data.text, () => {
-          setIsTyping(false);
-          setTypingMessage(null);
-          setMessages(prev => [
-            ...prev,
-            { role: 'assistant', content: data.text }
-          ]);
-        });
-
-        // Update visualizations immediately
-        if (data.visualizations?.length > 0) {
-          onVisualizationUpdate(data.visualizations);
-        }
-
-      } catch (error) {
-        console.error('Error:', error);
-        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      // Start typing animation for text response
+      setIsTyping(true);
+      setTypingMessage('');
+      
+      // Animate the text response
+      typeAssistantMessage(data.text, () => {
+        setIsTyping(false);
+        setTypingMessage(null);
         setMessages(prev => [
           ...prev,
-          { role: 'assistant', content: `Sorry, there was an error: ${errorMessage}` }
+          { role: 'assistant', content: data.text }
         ]);
-      } finally {
-        setIsLoading(false);
-        setInput('');
+      });
+
+      // Update visualizations if present
+      if (data.visualization) {
+        onVisualizationUpdate(data.visualization);
       }
+
+    } catch (error) {
+      console.error('Error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      setMessages(prev => [
+        ...prev,
+        { role: 'assistant', content: `Sorry, there was an error: ${errorMessage}` }
+      ]);
+      // Clear any existing visualization on error
+      onVisualizationUpdate(undefined);
+    } finally {
+      setIsLoading(false);
+      setInput('');
     }
   };
 
@@ -76,8 +83,8 @@ export default function AskAI({ onVisualizationUpdate }: AskAIProps) {
   function typeAssistantMessage(fullText: string, onDone: () => void) {
     let i = 0;
     function type() {
-      setTypingMessage(fullText.slice(0, i + 1));
-      if (i < fullText.length - 1) {
+      if (i <= fullText.length) {
+        setTypingMessage(fullText.slice(0, i));
         i++;
         setTimeout(type, 15);
       } else {

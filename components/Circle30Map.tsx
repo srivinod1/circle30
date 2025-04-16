@@ -3,31 +3,15 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { MapVisualization, Feature } from '../types/responses';
+import type { MapVisualization, MapFeature } from '../types/responses';
+import type { Point, Polygon } from 'geojson';
 
-// Helper function to check if geometry has coordinates
-function hasCoordinates(geometry: any): boolean {
-  return geometry && 
-    (geometry.type === 'Point' || geometry.type === 'Polygon') && 
-    Array.isArray(geometry.coordinates);
+function isPoint(geometry: any): geometry is Point {
+  return geometry?.type === 'Point';
 }
 
-// Helper function to validate coordinates
-function validateCoordinates(coords: any, type: string): any {
-  if (!coords) return null;
-
-  switch (type) {
-    case 'Point':
-      return coords.map((c: any) => typeof c === 'number' ? c : 0);
-    case 'Polygon':
-      return coords.map((ring: any) => 
-        ring.map((coord: any) => 
-          coord.map((c: any) => typeof c === 'number' ? c : 0)
-        )
-      );
-    default:
-      return coords;
-  }
+function isPolygon(geometry: any): geometry is Polygon {
+  return geometry?.type === 'Polygon';
 }
 
 export default function Circle30Map({ visualization }: { visualization?: MapVisualization }) {
@@ -103,77 +87,60 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
       }
 
       // Add new features
-      visualization.features.forEach((feature, index) => {
-        if (!hasCoordinates(feature.geometry)) {
-          console.warn('Invalid feature geometry:', feature);
-          return;
-        }
-
+      visualization.features.forEach((feature: MapFeature, index) => {
         const sourceId = `custom-source-${index}`;
         const layerId = `custom-layer-${index}`;
-
-        // Validate coordinates before adding to map
-        const validFeature = {
-          ...feature,
-          geometry: {
-            ...feature.geometry,
-            coordinates: validateCoordinates(feature.geometry.coordinates, feature.geometry.type)
-          }
-        };
 
         map.addSource(sourceId, {
           type: 'geojson',
           data: {
             type: 'FeatureCollection',
-            features: [validFeature]
+            features: [feature]
           }
         });
 
-        switch (feature.geometry.type) {
-          case 'Point':
-            map.addLayer({
-              id: layerId,
-              type: 'circle',
-              source: sourceId,
-              paint: {
-                'circle-radius': 8,
-                'circle-color': feature.properties?.style?.color || '#4F46E5',
-                'circle-opacity': 0.8
-              }
-            });
-            break;
+        if (isPoint(feature.geometry)) {
+          map.addLayer({
+            id: layerId,
+            type: 'circle',
+            source: sourceId,
+            paint: {
+              'circle-radius': 8,
+              'circle-color': feature.properties?.style?.color || '#4F46E5',
+              'circle-opacity': 0.8
+            }
+          });
+        } else if (isPolygon(feature.geometry)) {
+          map.addLayer({
+            id: `${layerId}-fill`,
+            type: 'fill',
+            source: sourceId,
+            paint: {
+              'fill-color': feature.properties?.style?.fillColor || '#4F46E5',
+              'fill-opacity': 0.3
+            }
+          });
 
-          case 'Polygon':
-            map.addLayer({
-              id: `${layerId}-fill`,
-              type: 'fill',
-              source: sourceId,
-              paint: {
-                'fill-color': feature.properties?.style?.fillColor || '#4F46E5',
-                'fill-opacity': 0.3
-              }
-            });
-
-            map.addLayer({
-              id: `${layerId}-outline`,
-              type: 'line',
-              source: sourceId,
-              paint: {
-                'line-color': feature.properties?.style?.color || '#4F46E5',
-                'line-width': 2
-              }
-            });
-            break;
+          map.addLayer({
+            id: `${layerId}-outline`,
+            type: 'line',
+            source: sourceId,
+            paint: {
+              'line-color': feature.properties?.style?.color || '#4F46E5',
+              'line-width': 2
+            }
+          });
         }
 
         // Add popups
-        const popupLayerId = feature.geometry.type === 'Polygon' ? `${layerId}-fill` : layerId;
         if (feature.properties?.data || feature.properties?.title) {
+          const popupLayerId = isPolygon(feature.geometry) ? `${layerId}-fill` : layerId;
+          
           map.on('click', popupLayerId, (e) => {
             if (!e.features?.[0]) return;
             
-            const coordinates = feature.geometry.type === 'Point'
-              ? (feature.geometry.coordinates as [number, number])
+            const coordinates = isPoint(feature.geometry)
+              ? feature.geometry.coordinates
               : [e.lngLat.lng, e.lngLat.lat];
 
             const content = `
@@ -186,12 +153,11 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
             `;
 
             new maplibregl.Popup()
-              .setLngLat(coordinates)
+              .setLngLat(coordinates as [number, number])
               .setHTML(content)
               .addTo(map);
           });
 
-          // Add hover effect
           map.on('mouseenter', popupLayerId, () => {
             map.getCanvas().style.cursor = 'pointer';
           });
@@ -206,12 +172,10 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
       if (visualization.config?.fitBounds !== false && visualization.features.length > 0) {
         const bounds = new maplibregl.LngLatBounds();
         visualization.features.forEach(feature => {
-          if (!hasCoordinates(feature.geometry)) return;
-          
-          if (feature.geometry.type === 'Point') {
+          if (isPoint(feature.geometry)) {
             bounds.extend(feature.geometry.coordinates as [number, number]);
-          } else if (feature.geometry.type === 'Polygon') {
-            (feature.geometry.coordinates as [number, number][][])[0].forEach(coord => bounds.extend(coord));
+          } else if (isPolygon(feature.geometry)) {
+            feature.geometry.coordinates[0].forEach(coord => bounds.extend(coord as [number, number]));
           }
         });
 
