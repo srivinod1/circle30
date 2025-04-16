@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import Circle30Map from '@/components/Circle30Map';
 import AskAI from '@/components/AskAI';
 import type { Visualization } from '../types/responses';
+import Chat from '@/components/Chat';
 
 export default function Home() {
   const [currentVisualizations, setCurrentVisualizations] = useState<Visualization[]>([]);
@@ -17,19 +18,18 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0F172A] text-[#E2E8F0] font-sans relative">
-      <header className="p-4 border-b border-[#1E293B] text-xl font-bold z-50 relative bg-[#0F172A]">
-        Circle30
-      </header>
-
-      {currentVisualizations.map((viz, index) => {
-        if (viz.type === 'map') {
-          return <Circle30Map key={index} visualization={viz.data} />;
-        }
-        return null;
-      })}
-      
-      <AskAI onVisualizationUpdate={handleVisualizationUpdate} />
+    <main className="flex min-h-screen flex-col items-center justify-between">
+      <div className="w-full h-screen flex">
+        {/* Left side: Map */}
+        <div className="w-1/2 h-full">
+          <Circle30Map />
+        </div>
+        
+        {/* Right side: Chat */}
+        <div className="w-1/2 h-full bg-gray-900">
+          <Chat />
+        </div>
+      </div>
     </main>
   );
 }

@@ -5,6 +5,24 @@ import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { MapVisualization } from '../types/responses';
 
+// Helper function to validate coordinates
+function validateCoordinates(coords: any, type: string): any {
+  if (!coords) return null;
+
+  switch (type) {
+    case 'Point':
+      return coords.map((c: any) => typeof c === 'number' ? c : 0);
+    case 'Polygon':
+      return coords.map((ring: any) => 
+        ring.map((coord: any) => 
+          coord.map((c: any) => typeof c === 'number' ? c : 0)
+        )
+      );
+    default:
+      return coords;
+  }
+}
+
 export default function Circle30Map({ visualization }: { visualization?: MapVisualization }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -16,9 +34,7 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
     if (!mapContainer.current) return;
 
     try {
-      console.log('TomTom API Key status:', process.env.NEXT_PUBLIC_TOMTOM_API_KEY ? 'Present' : 'Missing');
       console.log('Initializing map...');
-
       const apiKey = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
       const styleUrl = `https://api.tomtom.com/maps/orbis/assets/styles/0.*/style.json?key=${apiKey}&apiVersion=1&map=basic_street-light&hillshade=hillshade_light&trafficFlow=flow_relative-light&trafficIncidents=incidents_light`;
       
@@ -58,10 +74,10 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
     if (!mapLoaded || !mapRef.current || !visualization) return;
     
     const map = mapRef.current;
-    console.log('Updating visualization...');
+    console.log('Updating visualization...', visualization);
 
     try {
-      // First, remove existing custom layers and sources
+      // Remove existing layers and sources
       const style = map.getStyle();
       if (style && style.layers) {
         [...style.layers].reverse().forEach(layer => {
@@ -81,14 +97,28 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
 
       // Add new features
       visualization.features.forEach((feature, index) => {
+        if (!feature.geometry || !feature.geometry.coordinates) {
+          console.warn('Invalid feature:', feature);
+          return;
+        }
+
         const sourceId = `custom-source-${index}`;
         const layerId = `custom-layer-${index}`;
+
+        // Validate coordinates before adding to map
+        const validFeature = {
+          ...feature,
+          geometry: {
+            ...feature.geometry,
+            coordinates: validateCoordinates(feature.geometry.coordinates, feature.geometry.type)
+          }
+        };
 
         map.addSource(sourceId, {
           type: 'geojson',
           data: {
             type: 'FeatureCollection',
-            features: [feature]
+            features: [validFeature]
           }
         });
 
@@ -99,22 +129,9 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
               type: 'circle',
               source: sourceId,
               paint: {
-                'circle-radius': feature.properties?.style?.radius || 6,
+                'circle-radius': 8,
                 'circle-color': feature.properties?.style?.color || '#4F46E5',
-                'circle-opacity': feature.properties?.style?.opacity || 1
-              }
-            });
-            break;
-
-          case 'LineString':
-            map.addLayer({
-              id: layerId,
-              type: 'line',
-              source: sourceId,
-              paint: {
-                'line-color': feature.properties?.style?.color || '#4F46E5',
-                'line-width': feature.properties?.style?.weight || 2,
-                'line-opacity': feature.properties?.style?.opacity || 1
+                'circle-opacity': 0.8
               }
             });
             break;
@@ -126,7 +143,7 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
               source: sourceId,
               paint: {
                 'fill-color': feature.properties?.style?.fillColor || '#4F46E5',
-                'fill-opacity': feature.properties?.style?.fillOpacity || 0.3
+                'fill-opacity': 0.3
               }
             });
 
@@ -136,31 +153,21 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
               source: sourceId,
               paint: {
                 'line-color': feature.properties?.style?.color || '#4F46E5',
-                'line-width': feature.properties?.style?.weight || 2,
-                'line-opacity': feature.properties?.style?.opacity || 1
+                'line-width': 2
               }
             });
             break;
         }
 
         // Add popups
+        const popupLayerId = feature.geometry.type === 'Polygon' ? `${layerId}-fill` : layerId;
         if (feature.properties?.data || feature.properties?.title) {
-          map.on('mouseenter', layerId, () => {
-            map.getCanvas().style.cursor = 'pointer';
-          });
-
-          map.on('mouseleave', layerId, () => {
-            map.getCanvas().style.cursor = '';
-          });
-
-          map.on('click', layerId, (e) => {
-            let coordinates: [number, number];
+          map.on('click', popupLayerId, (e) => {
+            if (!e.features?.[0]) return;
             
-            if (feature.geometry.type === 'Point') {
-              coordinates = feature.geometry.coordinates as [number, number];
-            } else {
-              coordinates = [e.lngLat.lng, e.lngLat.lat];
-            }
+            const coordinates = feature.geometry.type === 'Point'
+              ? (feature.geometry.coordinates as [number, number])
+              : [e.lngLat.lng, e.lngLat.lat];
 
             const content = `
               <div style="color: black; padding: 8px;">
@@ -176,6 +183,15 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
               .setHTML(content)
               .addTo(map);
           });
+
+          // Add hover effect
+          map.on('mouseenter', popupLayerId, () => {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+
+          map.on('mouseleave', popupLayerId, () => {
+            map.getCanvas().style.cursor = '';
+          });
         }
       });
 
@@ -183,10 +199,10 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
       if (visualization.config?.fitBounds !== false && visualization.features.length > 0) {
         const bounds = new maplibregl.LngLatBounds();
         visualization.features.forEach(feature => {
+          if (!feature.geometry || !feature.geometry.coordinates) return;
+          
           if (feature.geometry.type === 'Point') {
             bounds.extend(feature.geometry.coordinates as [number, number]);
-          } else if (feature.geometry.type === 'LineString') {
-            (feature.geometry.coordinates as [number, number][]).forEach(coord => bounds.extend(coord));
           } else if (feature.geometry.type === 'Polygon') {
             (feature.geometry.coordinates as [number, number][][])[0].forEach(coord => bounds.extend(coord));
           }
@@ -207,7 +223,7 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
   }, [visualization, mapLoaded]);
 
   return (
-    <div style={{ width: '100%', height: '100vh', backgroundColor: '#0F172A' }}>
+    <div style={{ width: '100%', height: '100vh', position: 'relative' }}>
       {error && (
         <div className="text-red-400 bg-gray-900/80 p-4 absolute top-4 left-4 right-4 z-50 rounded-lg text-center">
           {error}
