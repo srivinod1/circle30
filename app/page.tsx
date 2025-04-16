@@ -1,10 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Circle30Map from '@/components/Circle30Map';
+import Circle30Map from '../components/Circle30Map';
 import AskAI from '@/components/AskAI';
 import type { Visualization } from '../types/responses';
-import Chat from '@/components/Chat';
+import Chat from '../components/Chat';
 
 export default function Home() {
   const [currentVisualizations, setCurrentVisualizations] = useState<Visualization[]>([]);
