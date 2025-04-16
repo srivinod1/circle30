@@ -1,25 +1,23 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
+import { useState } from 'react';
+import type { AIResponse } from '../types/responses';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
-export default function AskAI({ onQuery }: { onQuery: (query: string) => void }) {
+interface AskAIProps {
+  onVisualizationUpdate: (visualizations: AIResponse['visualizations']) => void;
+}
+
+export default function AskAI({ onVisualizationUpdate }: AskAIProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [typingMessage, setTypingMessage] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  // Scroll to bottom when messages or typingMessage changes
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, typingMessage]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,39 +25,46 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
       setIsLoading(true);
       const userMessage: Message = { role: 'user', content: input };
       setMessages(prev => [...prev, userMessage]);
+      
       try {
         const res = await fetch("http://localhost:5002/chat", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: input })
         });
-        const data = await res.json();
-        if (!data.response) {
-          throw new Error('Invalid response format from AI agent');
+
+        if (!res.ok) {
+          throw new Error(`API error: ${res.status}`);
         }
+
+        const data: AIResponse = await res.json();
+        
+        // Start typing animation for text response
         setIsTyping(true);
         setTypingMessage('');
-        // Animate the assistant's response
-        typeAssistantMessage(data.response, () => {
+        
+        // Animate the text response
+        typeAssistantMessage(data.text, () => {
           setIsTyping(false);
           setTypingMessage(null);
           setMessages(prev => [
             ...prev,
-            { role: 'assistant', content: data.response }
+            { role: 'assistant', content: data.text }
           ]);
         });
-        onQuery(input);
-      } catch (error) {
-        let errorMessage = 'Sorry, there was an error processing your request.';
-        if (error instanceof Error) {
-          errorMessage += ` (${error.message})`;
+
+        // Update visualizations immediately
+        if (data.visualizations?.length > 0) {
+          onVisualizationUpdate(data.visualizations);
         }
+
+      } catch (error) {
+        console.error('Error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         setMessages(prev => [
           ...prev,
-          { role: 'assistant', content: errorMessage }
+          { role: 'assistant', content: `Sorry, there was an error: ${errorMessage}` }
         ]);
-        setIsTyping(false);
-        setTypingMessage(null);
       } finally {
         setIsLoading(false);
         setInput('');
@@ -67,14 +72,14 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
     }
   };
 
-  // Typewriter effect function
+  // Typing animation function
   function typeAssistantMessage(fullText: string, onDone: () => void) {
     let i = 0;
     function type() {
       setTypingMessage(fullText.slice(0, i + 1));
       if (i < fullText.length - 1) {
         i++;
-        setTimeout(type, 15); // Adjust speed here (ms per character)
+        setTimeout(type, 15);
       } else {
         onDone();
       }
@@ -91,39 +96,30 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
 
       {/* Messages container */}
       <div className="flex-1 overflow-y-auto mb-4 space-y-4 custom-scrollbar">
-        {messages.length === 0 && !typingMessage ? (
-          <div className="text-gray-400 text-sm italic p-3">
-            Ask about EV charging access, underserved ZIP codes, and more...
+        {messages.map((message, index) => (
+          <div
+            key={index}
+            className={`p-3 rounded-lg text-sm ${
+              message.role === 'user'
+                ? 'bg-gray-700 ml-4'
+                : 'bg-gray-600 mr-4'
+            }`}
+            style={message.role === 'assistant' ? { whiteSpace: 'pre-line' } : {}}
+          >
+            {message.content}
           </div>
-        ) : (
-          <>
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`p-3 rounded-lg text-sm ${
-                  message.role === 'user'
-                    ? 'bg-gray-700 ml-4'
-                    : 'bg-gray-600 mr-4'
-                }`}
-                style={message.role === 'assistant' ? { whiteSpace: 'pre-line' } : {}}
-              >
-                {message.content}
-              </div>
-            ))}
-            {isTyping && typingMessage !== null && (
-              <div
-                className="p-3 rounded-lg text-sm bg-gray-600 mr-4"
-                style={{ whiteSpace: 'pre-line' }}
-              >
-                {typingMessage}
-                <span className="animate-pulse">|</span>
-              </div>
-            )}
-          </>
+        ))}
+        {isTyping && typingMessage !== null && (
+          <div
+            className="p-3 rounded-lg text-sm bg-gray-600 mr-4"
+            style={{ whiteSpace: 'pre-line' }}
+          >
+            {typingMessage}
+            <span className="animate-pulse">|</span>
+          </div>
         )}
-        <div ref={messagesEndRef} />
       </div>
-      
+
       {/* Input form */}
       <form onSubmit={handleSubmit} className="mt-auto border-t border-gray-600 pt-4">
         <div className="flex flex-col gap-2">
@@ -134,7 +130,7 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
             className="w-full bg-gray-700 text-white placeholder-gray-400 outline-none px-4 py-2 rounded-lg border border-gray-600 focus:border-indigo-500 transition-colors resize-none"
             disabled={isLoading || isTyping}
             rows={2}
-            style={{ minHeight: '40px', maxHeight: '120px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}
+            style={{ minHeight: '40px', maxHeight: '120px' }}
           />
           <button
             type="submit"

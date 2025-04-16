@@ -1,13 +1,15 @@
 'use client';
 
+import { useState } from 'react';
 import Circle30Map from '@/components/Circle30Map';
 import AskAI from '@/components/AskAI';
+import type { Visualization } from '../types/responses';
 
 export default function Home() {
-  const handleQuery = (query: string) => {
-    console.log('User asked:', query);
-    // We don't need to do anything here anymore since the AskAI component
-    // handles the API call directly
+  const [currentVisualizations, setCurrentVisualizations] = useState<Visualization[]>([]);
+
+  const handleVisualizationUpdate = (visualizations: Visualization[]) => {
+    setCurrentVisualizations(visualizations);
   };
 
   return (
@@ -16,8 +18,14 @@ export default function Home() {
         Circle30
       </header>
 
-      <Circle30Map />
-      <AskAI onQuery={handleQuery} />
+      {currentVisualizations.map((viz, index) => {
+        if (viz.type === 'map') {
+          return <Circle30Map key={index} visualization={viz.data} />;
+        }
+        return null;
+      })}
+      
+      <AskAI onVisualizationUpdate={handleVisualizationUpdate} />
     </main>
   );
 }
