@@ -20,18 +20,20 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
       console.log('Initializing map...');
 
       const apiKey = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
+      const styleUrl = `https://api.tomtom.com/maps/orbis/assets/styles/0.*/style.json?key=${apiKey}&apiVersion=1&map=basic_street-light&hillshade=hillshade_light&trafficFlow=flow_relative-light&trafficIncidents=incidents_light`;
       
       const map = new maplibregl.Map({
         container: mapContainer.current,
-        style: `https://api.tomtom.com/style/1/style/22.2/basic_main.json?key=${apiKey}`,
+        style: styleUrl,
         center: [-99.3832, 31.2504], // Texas
-        zoom: 6
+        zoom: 6,
+        attributionControl: true
       });
 
       map.addControl(new maplibregl.NavigationControl(), 'top-right');
 
       map.on('style.load', () => {
-        console.log('Map style loaded');
+        console.log('Map style loaded successfully');
         mapRef.current = map;
         setMapLoaded(true);
       });
