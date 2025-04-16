@@ -149,9 +149,13 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
           });
 
           map.on('click', layerId, (e) => {
-            const coordinates = feature.geometry.type === 'Point' 
-              ? (feature.geometry.coordinates as [number, number])
-              : [e.lngLat.lng, e.lngLat.lat];
+            let coordinates: [number, number];
+            
+            if (feature.geometry.type === 'Point') {
+              coordinates = feature.geometry.coordinates as [number, number];
+            } else {
+              coordinates = [e.lngLat.lng, e.lngLat.lat];
+            }
 
             const content = `
               <div style="color: black; padding: 8px;">
