@@ -3,7 +3,14 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { MapVisualization } from '../types/responses';
+import type { MapVisualization, Feature } from '../types/responses';
+
+// Helper function to check if geometry has coordinates
+function hasCoordinates(geometry: any): boolean {
+  return geometry && 
+    (geometry.type === 'Point' || geometry.type === 'Polygon') && 
+    Array.isArray(geometry.coordinates);
+}
 
 // Helper function to validate coordinates
 function validateCoordinates(coords: any, type: string): any {
@@ -97,8 +104,8 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
 
       // Add new features
       visualization.features.forEach((feature, index) => {
-        if (!feature.geometry || !feature.geometry.coordinates) {
-          console.warn('Invalid feature:', feature);
+        if (!hasCoordinates(feature.geometry)) {
+          console.warn('Invalid feature geometry:', feature);
           return;
         }
 
@@ -199,7 +206,7 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
       if (visualization.config?.fitBounds !== false && visualization.features.length > 0) {
         const bounds = new maplibregl.LngLatBounds();
         visualization.features.forEach(feature => {
-          if (!feature.geometry || !feature.geometry.coordinates) return;
+          if (!hasCoordinates(feature.geometry)) return;
           
           if (feature.geometry.type === 'Point') {
             bounds.extend(feature.geometry.coordinates as [number, number]);

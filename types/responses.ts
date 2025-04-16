@@ -2,8 +2,8 @@ import type { Feature, Geometry } from 'geojson';
 
 // Response types for the AI chat
 export interface AIResponse {
-  text: string;
-  visualizations: Visualization[];
+  message: string;
+  visualization?: MapVisualization;
 }
 
 export interface Visualization {
@@ -12,30 +12,36 @@ export interface Visualization {
 }
 
 export interface MapVisualization {
-  features: MapFeature[];
+  features: Array<Feature<Geometry, FeatureProperties>>;
   config?: {
     fitBounds?: boolean;
-    center?: [number, number];
-    zoom?: number;
   };
 }
 
 // Define our own properties interface
 export interface FeatureProperties {
-  id: string;
   title?: string;
   data?: Record<string, string | number>;
-  style?: {
-    color?: string;
-    radius?: number;
-    fillColor?: string;
-    fillOpacity?: number;
-    weight?: number;
-    opacity?: number;
-  };
+  style?: FeatureStyle;
 }
 
-export type MapFeature = Feature<Geometry, FeatureProperties>;
+export interface FeatureStyle {
+  color?: string;
+  fillColor?: string;
+  opacity?: number;
+  weight?: number;
+}
+
+export interface Feature {
+  type: 'Feature';
+  geometry: GeoJSONGeometry;
+  properties: FeatureProperties;
+}
+
+export interface GeoJSONGeometry {
+  type: 'Point' | 'Polygon';
+  coordinates: number[] | number[][] | number[][][];
+}
 
 // Geometry types
 export interface Point {

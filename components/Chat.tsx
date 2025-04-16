@@ -1,8 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import type { MapVisualization } from '../types/responses';
 
-export default function Chat() {
+interface ChatProps {
+  onVisualizationUpdate: (visualization: MapVisualization | undefined) => void;
+}
+
+export default function Chat({ onVisualizationUpdate }: ChatProps) {
   const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -31,6 +36,11 @@ export default function Chat() {
 
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
+      
+      // Update visualization if present in response
+      if (data.visualization) {
+        onVisualizationUpdate(data.visualization);
+      }
     } catch (error) {
       console.error('Error:', error);
       setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, there was an error processing your request.' }]);
