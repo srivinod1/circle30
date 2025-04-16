@@ -8,17 +8,17 @@ export interface FeatureStyle {
   weight?: number;
 }
 
-// Properties for features, extending GeoJsonProperties to ensure compatibility
-export interface FeatureProperties extends GeoJsonProperties {
+// Properties for features
+export interface FeatureProperties {
   title?: string;
   data?: Record<string, string | number>;
   style?: FeatureStyle;
 }
 
-// Our map feature type that's used in Circle30Map.tsx
+// Our map feature type
 export type MapFeature = Feature<Geometry, FeatureProperties>;
 
-// Main visualization type used in both Circle30Map.tsx and Chat.tsx
+// Main visualization type
 export interface MapVisualization {
   features: MapFeature[];
   config?: {
@@ -26,19 +26,19 @@ export interface MapVisualization {
   };
 }
 
-// Response type used in Chat.tsx
+// Response type for chat
 export interface ChatResponse {
   message: string;
   visualization?: MapVisualization;
 }
 
-// Message type used in Chat.tsx
+// Message type for chat
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
 
-// Response type used in AskAI.tsx
+// Response type for AI
 export interface AIResponse {
   text: string;
   visualization?: MapVisualization;
