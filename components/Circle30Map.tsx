@@ -4,14 +4,22 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { MapVisualization, MapFeature } from '../types/responses';
-import type { Geometry } from 'geojson';
+import type { Geometry, Point, Polygon, GeometryCollection } from 'geojson';
 
-function isPoint(geometry: Geometry): geometry is { type: "Point", coordinates: number[] } {
+function isPoint(geometry: Geometry): geometry is Point {
   return geometry.type === 'Point';
 }
 
-function isPolygon(geometry: Geometry): geometry is { type: "Polygon", coordinates: number[][][] } {
+function isPolygon(geometry: Geometry): geometry is Polygon {
   return geometry.type === 'Polygon';
+}
+
+function isGeometryCollection(geometry: Geometry): geometry is GeometryCollection {
+  return geometry.type === 'GeometryCollection';
+}
+
+function hasCoordinates(geometry: Geometry): geometry is Point | Polygon {
+  return 'coordinates' in geometry;
 }
 
 export default function Circle30Map({ visualization }: { visualization?: MapVisualization }) {
@@ -94,8 +102,8 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
         const sourceId = `custom-source-${index}`;
         const layerId = `custom-layer-${index}`;
 
-        // Ensure the feature has valid coordinates
-        if (!feature.geometry || !feature.geometry.coordinates) {
+        // Check if geometry exists and has valid coordinates
+        if (!feature.geometry || !hasCoordinates(feature.geometry)) {
           console.warn('Invalid feature geometry:', feature);
           return;
         }
@@ -181,7 +189,7 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
       if (visualization.config?.fitBounds !== false && visualization.features.length > 0) {
         const bounds = new maplibregl.LngLatBounds();
         visualization.features.forEach(feature => {
-          if (!feature.geometry || !feature.geometry.coordinates) return;
+          if (!feature.geometry || !hasCoordinates(feature.geometry)) return;
           
           if (isPoint(feature.geometry)) {
             bounds.extend(feature.geometry.coordinates as [number, number]);
