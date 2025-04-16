@@ -1,4 +1,4 @@
-import type { Feature, Geometry, GeoJsonProperties } from 'geojson';
+import type { Feature, Geometry } from 'geojson';
 
 // Response types for the AI chat
 export interface AIResponse {
@@ -20,7 +20,8 @@ export interface MapVisualization {
   };
 }
 
-export interface FeatureProperties extends GeoJsonProperties {
+// Define our own properties interface
+export interface FeatureProperties {
   id: string;
   title?: string;
   data?: Record<string, string | number>;
@@ -36,7 +37,23 @@ export interface FeatureProperties extends GeoJsonProperties {
 
 export type MapFeature = Feature<Geometry, FeatureProperties>;
 
-// Helper types for specific geometries
+// Geometry types
+export interface Point {
+  type: "Point";
+  coordinates: [number, number];
+}
+
+export interface LineString {
+  type: "LineString";
+  coordinates: [number, number][];
+}
+
+export interface Polygon {
+  type: "Polygon";
+  coordinates: [number, number][][];
+}
+
+// Feature types with specific geometries
 export interface PointFeature extends Feature<Point, FeatureProperties> {
   geometry: {
     type: "Point";
@@ -56,20 +73,4 @@ export interface PolygonFeature extends Feature<Polygon, FeatureProperties> {
     type: "Polygon";
     coordinates: [number, number][][];
   };
-}
-
-// Geometry types
-export interface Point {
-  type: "Point";
-  coordinates: [number, number];
-}
-
-export interface LineString {
-  type: "LineString";
-  coordinates: [number, number][];
-}
-
-export interface Polygon {
-  type: "Polygon";
-  coordinates: [number, number][][];
 } 
