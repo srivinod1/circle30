@@ -4,14 +4,14 @@ import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
 import type { MapVisualization, MapFeature } from '../types/responses';
-import type { Point, Polygon } from 'geojson';
+import type { Geometry } from 'geojson';
 
-function isPoint(geometry: any): geometry is Point {
-  return geometry?.type === 'Point';
+function isPoint(geometry: Geometry): geometry is { type: "Point", coordinates: number[] } {
+  return geometry.type === 'Point';
 }
 
-function isPolygon(geometry: any): geometry is Polygon {
-  return geometry?.type === 'Polygon';
+function isPolygon(geometry: Geometry): geometry is { type: "Polygon", coordinates: number[][][] } {
+  return geometry.type === 'Polygon';
 }
 
 export default function Circle30Map({ visualization }: { visualization?: MapVisualization }) {

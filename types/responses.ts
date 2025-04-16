@@ -1,11 +1,11 @@
-import type { Feature, Point, Polygon } from 'geojson';
+import type { Feature, Geometry } from 'geojson';
 
 // Style options for visualization features
 export interface FeatureStyle {
-  readonly color?: string;
-  readonly fillColor?: string;
-  readonly opacity?: number;
-  readonly weight?: number;
+  color?: string;
+  fillColor?: string;
+  opacity?: number;
+  weight?: number;
 }
 
 // Properties for features, extending GeoJsonProperties to ensure compatibility
@@ -16,7 +16,7 @@ export interface FeatureProperties extends GeoJsonProperties {
 }
 
 // Our map feature type that's used in Circle30Map.tsx
-export type MapFeature = Feature<Point | Polygon, FeatureProperties>;
+export type MapFeature = Feature<Geometry, FeatureProperties>;
 
 // Main visualization type used in both Circle30Map.tsx and Chat.tsx
 export interface MapVisualization {
