@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { MapVisualization } from '../types/responses';
+import type { MapVisualization, MapFeature, PointFeature, LineStringFeature, PolygonFeature } from '../types/responses';
 
 export default function Circle30Map({ visualization }: { visualization?: MapVisualization }) {
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -43,7 +43,7 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
     if (!mapRef.current || !visualization) return;
     const map = mapRef.current;
 
-    // Remove existing layers and sources
+    // Clear existing layers and sources
     map.getStyle().layers.forEach(layer => {
       if (layer.id.startsWith('custom-')) {
         map.removeLayer(layer.id);
