@@ -27,13 +27,16 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
     try {
       console.log('Initializing map...');
       const apiKey = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
-      const styleUrl = `https://api.tomtom.com/maps/orbis/assets/styles/0.*/style.json?key=${apiKey}&apiVersion=1&map=basic_street-light&hillshade=hillshade_light&trafficFlow=flow_relative-light&trafficIncidents=incidents_light`;
+      
+      // Using the vector basemap style URL
+      const styleUrl = `https://api.tomtom.com/style/1/style/22.2/basic_main.json?key=${apiKey}`;
       
       const map = new maplibregl.Map({
         container: mapContainer.current,
         style: styleUrl,
         center: [-99.3832, 31.2504], // Texas
-        zoom: 6
+        zoom: 6,
+        maxZoom: 17
       });
 
       map.addControl(new maplibregl.NavigationControl(), 'top-right');
@@ -90,6 +93,12 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
       visualization.features.forEach((feature: MapFeature, index) => {
         const sourceId = `custom-source-${index}`;
         const layerId = `custom-layer-${index}`;
+
+        // Ensure the feature has valid coordinates
+        if (!feature.geometry || !feature.geometry.coordinates) {
+          console.warn('Invalid feature geometry:', feature);
+          return;
+        }
 
         map.addSource(sourceId, {
           type: 'geojson',
@@ -172,6 +181,8 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
       if (visualization.config?.fitBounds !== false && visualization.features.length > 0) {
         const bounds = new maplibregl.LngLatBounds();
         visualization.features.forEach(feature => {
+          if (!feature.geometry || !feature.geometry.coordinates) return;
+          
           if (isPoint(feature.geometry)) {
             bounds.extend(feature.geometry.coordinates as [number, number]);
           } else if (isPolygon(feature.geometry)) {
