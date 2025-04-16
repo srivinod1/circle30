@@ -26,8 +26,7 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
         container: mapContainer.current,
         style: styleUrl,
         center: [-99.3832, 31.2504], // Texas
-        zoom: 6,
-        attributionControl: true
+        zoom: 6
       });
 
       map.addControl(new maplibregl.NavigationControl(), 'top-right');
