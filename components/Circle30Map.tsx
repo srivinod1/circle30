@@ -36,8 +36,8 @@ export default function Circle30Map({ visualization }: { visualization?: MapVisu
       console.log('Initializing map...');
       const apiKey = process.env.NEXT_PUBLIC_TOMTOM_API_KEY;
       
-      // Updated to use the TomTom Orbis style URL
-      const styleUrl = `https://api.tomtom.com/style/1/style/22.2.1-9/basic_main-light.json?key=${apiKey}`;
+      // Correct TomTom Orbis style URL format
+      const styleUrl = `https://api.tomtom.com/maps/orbis/assets/styles/0.0.0-0?key=${apiKey}&apiVersion=1&assetCategories[]=basic`;
       
       const map = new maplibregl.Map({
         container: mapContainer.current,
