@@ -31,19 +31,22 @@ export default function Chat({ onVisualizationUpdate }: ChatProps) {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get response');
+        throw new Error(`API error: ${response.status}`);
       }
 
       const data = await response.json();
       setMessages(prev => [...prev, { role: 'assistant', content: data.message }]);
       
-      // Update visualization if present in response
       if (data.visualization) {
         onVisualizationUpdate(data.visualization);
       }
     } catch (error) {
       console.error('Error:', error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, there was an error processing your request.' }]);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: 'Sorry, there was an error processing your request.' 
+      }]);
+      onVisualizationUpdate(undefined);
     } finally {
       setIsLoading(false);
     }
