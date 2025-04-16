@@ -1,51 +1,47 @@
-import type { Feature, Point, Polygon, GeoJsonProperties } from 'geojson';
+import type { Feature, Point, Polygon } from 'geojson';
 
-// Style options for features
+// Style options for visualization features
 export interface FeatureStyle {
-  color?: string;
-  fillColor?: string;
-  opacity?: number;
-  fillOpacity?: number;
-  weight?: number;
-  radius?: number;
+  readonly color?: string;
+  readonly fillColor?: string;
+  readonly opacity?: number;
+  readonly weight?: number;
 }
 
-// Properties that can be attached to a feature
+// Properties for features, extending GeoJsonProperties to ensure compatibility
 export interface FeatureProperties extends GeoJsonProperties {
   title?: string;
   data?: Record<string, string | number>;
   style?: FeatureStyle;
 }
 
-// Valid geometry types for our features
-export type ValidGeometry = Point | Polygon;
+// Our map feature type that's used in Circle30Map.tsx
+export type MapFeature = Feature<Point | Polygon, FeatureProperties>;
 
-// Our custom feature type
-export type MapFeature = Feature<ValidGeometry, FeatureProperties>;
-
-// Configuration for map visualization
-export interface MapVisualizationConfig {
-  fitBounds?: boolean;
-  center?: [number, number];
-  zoom?: number;
-}
-
-// Main visualization type
+// Main visualization type used in both Circle30Map.tsx and Chat.tsx
 export interface MapVisualization {
   features: MapFeature[];
-  config?: MapVisualizationConfig;
+  config?: {
+    fitBounds?: boolean;
+  };
 }
 
-// Response from the AI endpoint
-export interface AIResponse {
+// Response type used in Chat.tsx
+export interface ChatResponse {
   message: string;
   visualization?: MapVisualization;
 }
 
-// Chat message type
+// Message type used in Chat.tsx
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
+}
+
+// Response type used in AskAI.tsx
+export interface AIResponse {
+  text: string;
+  visualization?: MapVisualization;
 }
 
 // Geometry types
