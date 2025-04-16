@@ -3,187 +3,205 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import type { MapVisualization, MapFeature, PointFeature, LineStringFeature, PolygonFeature } from '../types/responses';
+import type { MapVisualization } from '../types/responses';
 
 export default function Circle30Map({ visualization }: { visualization?: MapVisualization }) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
 
   // Initialize map
   useEffect(() => {
     if (!mapContainer.current) return;
 
-    const initializeMap = async () => {
-      try {
-        const map = new maplibregl.Map({
-          container: mapContainer.current!,
-          style: `https://api.tomtom.com/maps/basic/style/1/style.json?key=${process.env.NEXT_PUBLIC_TOMTOM_API_KEY}`,
-          center: [-99.3832, 31.2504], // Default to Texas center
-          zoom: 6
-        });
+    try {
+      console.log('Initializing map...');
+      const map = new maplibregl.Map({
+        container: mapContainer.current,
+        style: `https://api.tomtom.com/maps/basic/style/1/style.json?key=${process.env.NEXT_PUBLIC_TOMTOM_API_KEY}`,
+        center: [-99.3832, 31.2504], // Texas
+        zoom: 6
+      });
 
-        map.addControl(new maplibregl.NavigationControl(), 'top-right');
+      map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
+      map.on('style.load', () => {
+        console.log('Map style loaded');
         mapRef.current = map;
+        setMapLoaded(true);
+      });
 
-        // Wait for map to load before adding sources and layers
-        await new Promise(resolve => map.on('load', resolve));
-      } catch (err: any) {
-        console.error('Map initialization error:', err);
-        setError(err.message);
-      }
-    };
+      map.on('error', (e) => {
+        console.error('Map error:', e);
+        setError(e.error?.message || 'Map error occurred');
+      });
 
-    initializeMap();
-    return () => mapRef.current?.remove();
+      return () => {
+        map.remove();
+        mapRef.current = null;
+        setMapLoaded(false);
+      };
+    } catch (err) {
+      console.error('Map initialization error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to initialize map');
+    }
   }, []);
 
-  // Update visualizations when data changes
+  // Handle visualization updates
   useEffect(() => {
-    if (!mapRef.current || !visualization) return;
+    if (!mapLoaded || !mapRef.current || !visualization) return;
+    
     const map = mapRef.current;
+    console.log('Updating visualization...');
 
-    // Clear existing layers and sources
-    map.getStyle().layers.forEach(layer => {
-      if (layer.id.startsWith('custom-')) {
-        map.removeLayer(layer.id);
+    try {
+      // First, remove existing custom layers and sources
+      const style = map.getStyle();
+      if (style && style.layers) {
+        [...style.layers].reverse().forEach(layer => {
+          if (layer.id.startsWith('custom-')) {
+            map.removeLayer(layer.id);
+          }
+        });
       }
-    });
-    Object.keys(map.getStyle().sources).forEach(source => {
-      if (source.startsWith('custom-')) {
-        map.removeSource(source);
+
+      if (style && style.sources) {
+        Object.keys(style.sources).forEach(sourceId => {
+          if (sourceId.startsWith('custom-')) {
+            map.removeSource(sourceId);
+          }
+        });
       }
-    });
 
-    // Add new features
-    visualization.features.forEach((feature, index) => {
-      const sourceId = `custom-source-${index}`;
-      const layerId = `custom-layer-${index}`;
+      // Add new features
+      visualization.features.forEach((feature, index) => {
+        const sourceId = `custom-source-${index}`;
+        const layerId = `custom-layer-${index}`;
 
-      // Add source
-      map.addSource(sourceId, {
-        type: 'geojson',
-        data: {
-          type: 'FeatureCollection',
-          features: [feature]
+        map.addSource(sourceId, {
+          type: 'geojson',
+          data: {
+            type: 'FeatureCollection',
+            features: [feature]
+          }
+        });
+
+        switch (feature.geometry.type) {
+          case 'Point':
+            map.addLayer({
+              id: layerId,
+              type: 'circle',
+              source: sourceId,
+              paint: {
+                'circle-radius': feature.properties?.style?.radius || 6,
+                'circle-color': feature.properties?.style?.color || '#4F46E5',
+                'circle-opacity': feature.properties?.style?.opacity || 1
+              }
+            });
+            break;
+
+          case 'LineString':
+            map.addLayer({
+              id: layerId,
+              type: 'line',
+              source: sourceId,
+              paint: {
+                'line-color': feature.properties?.style?.color || '#4F46E5',
+                'line-width': feature.properties?.style?.weight || 2,
+                'line-opacity': feature.properties?.style?.opacity || 1
+              }
+            });
+            break;
+
+          case 'Polygon':
+            map.addLayer({
+              id: `${layerId}-fill`,
+              type: 'fill',
+              source: sourceId,
+              paint: {
+                'fill-color': feature.properties?.style?.fillColor || '#4F46E5',
+                'fill-opacity': feature.properties?.style?.fillOpacity || 0.3
+              }
+            });
+
+            map.addLayer({
+              id: `${layerId}-outline`,
+              type: 'line',
+              source: sourceId,
+              paint: {
+                'line-color': feature.properties?.style?.color || '#4F46E5',
+                'line-width': feature.properties?.style?.weight || 2,
+                'line-opacity': feature.properties?.style?.opacity || 1
+              }
+            });
+            break;
+        }
+
+        // Add popups
+        if (feature.properties?.data || feature.properties?.title) {
+          map.on('mouseenter', layerId, () => {
+            map.getCanvas().style.cursor = 'pointer';
+          });
+
+          map.on('mouseleave', layerId, () => {
+            map.getCanvas().style.cursor = '';
+          });
+
+          map.on('click', layerId, (e) => {
+            const coordinates = feature.geometry.type === 'Point' 
+              ? (feature.geometry.coordinates as [number, number])
+              : [e.lngLat.lng, e.lngLat.lat];
+
+            const content = `
+              <div style="color: black; padding: 8px;">
+                ${feature.properties.title ? `<h3 style="font-weight: bold; margin-bottom: 8px;">${feature.properties.title}</h3>` : ''}
+                ${Object.entries(feature.properties.data || {})
+                  .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
+                  .join('<br/>')}
+              </div>
+            `;
+
+            new maplibregl.Popup()
+              .setLngLat(coordinates)
+              .setHTML(content)
+              .addTo(map);
+          });
         }
       });
 
-      // Add appropriate layer based on geometry type
-      switch (feature.geometry.type) {
-        case 'Point':
-          map.addLayer({
-            id: layerId,
-            type: 'circle',
-            source: sourceId,
-            paint: {
-              'circle-radius': feature.properties.style?.radius || 6,
-              'circle-color': feature.properties.style?.color || '#4F46E5',
-              'circle-opacity': feature.properties.style?.opacity || 1
-            }
-          });
-          break;
-
-        case 'LineString':
-          map.addLayer({
-            id: layerId,
-            type: 'line',
-            source: sourceId,
-            paint: {
-              'line-color': feature.properties.style?.color || '#4F46E5',
-              'line-width': feature.properties.style?.weight || 2,
-              'line-opacity': feature.properties.style?.opacity || 1
-            }
-          });
-          break;
-
-        case 'Polygon':
-          map.addLayer({
-            id: `${layerId}-fill`,
-            type: 'fill',
-            source: sourceId,
-            paint: {
-              'fill-color': feature.properties.style?.fillColor || '#4F46E5',
-              'fill-opacity': feature.properties.style?.fillOpacity || 0.3
-            }
-          });
-
-          map.addLayer({
-            id: `${layerId}-outline`,
-            type: 'line',
-            source: sourceId,
-            paint: {
-              'line-color': feature.properties.style?.color || '#4F46E5',
-              'line-width': feature.properties.style?.weight || 2,
-              'line-opacity': feature.properties.style?.opacity || 1
-            }
-          });
-          break;
-      }
-
-      // Add popup if there's data
-      if (feature.properties.data || feature.properties.title) {
-        const popup = new maplibregl.Popup({
-          closeButton: false,
-          closeOnClick: false
+      // Fit bounds if needed
+      if (visualization.config?.fitBounds !== false && visualization.features.length > 0) {
+        const bounds = new maplibregl.LngLatBounds();
+        visualization.features.forEach(feature => {
+          if (feature.geometry.type === 'Point') {
+            bounds.extend(feature.geometry.coordinates as [number, number]);
+          } else if (feature.geometry.type === 'LineString') {
+            (feature.geometry.coordinates as [number, number][]).forEach(coord => bounds.extend(coord));
+          } else if (feature.geometry.type === 'Polygon') {
+            (feature.geometry.coordinates as [number, number][][])[0].forEach(coord => bounds.extend(coord));
+          }
         });
 
-        map.on('mouseenter', layerId, (e) => {
-          map.getCanvas().style.cursor = 'pointer';
-          
-          const coordinates = feature.geometry.type === 'Point' 
-            ? feature.geometry.coordinates as [number, number]
-            : e.lngLat;
-
-          const content = `
-            <div style="color: black; padding: 8px;">
-              ${feature.properties.title ? `<h3 style="font-weight: bold; margin-bottom: 8px;">${feature.properties.title}</h3>` : ''}
-              ${Object.entries(feature.properties.data || {})
-                .map(([key, value]) => `<strong>${key}:</strong> ${value}`)
-                .join('<br/>')}
-            </div>
-          `;
-
-          popup
-            .setLngLat(coordinates)
-            .setHTML(content)
-            .addTo(map);
-        });
-
-        map.on('mouseleave', layerId, () => {
-          map.getCanvas().style.cursor = '';
-          popup.remove();
-        });
-      }
-    });
-
-    // Fit bounds if specified
-    if (visualization.config?.fitBounds !== false) {
-      const bounds = new maplibregl.LngLatBounds();
-      visualization.features.forEach(feature => {
-        if (feature.geometry.type === 'Point') {
-          bounds.extend(feature.geometry.coordinates as [number, number]);
-        } else if (feature.geometry.type === 'LineString') {
-          (feature.geometry.coordinates as [number, number][]).forEach(coord => bounds.extend(coord));
-        } else if (feature.geometry.type === 'Polygon') {
-          (feature.geometry.coordinates as [number, number][][])[0].forEach(coord => bounds.extend(coord));
+        if (!bounds.isEmpty()) {
+          map.fitBounds(bounds, {
+            padding: 50,
+            duration: 1000
+          });
         }
-      });
-      
-      if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, {
-          padding: 50,
-          duration: 1000
-        });
       }
+
+    } catch (err) {
+      console.error('Error updating visualization:', err);
+      setError(err instanceof Error ? err.message : 'Failed to update visualization');
     }
-  }, [visualization]);
+  }, [visualization, mapLoaded]);
 
   return (
     <div style={{ width: '100%', height: '100vh', backgroundColor: '#0F172A' }}>
       {error && (
-        <div className="text-red-400 bg-gray-900 p-4 absolute top-0 left-0 z-50">
-          Map error: {error}
+        <div className="text-red-400 bg-gray-900/80 p-4 absolute top-4 left-4 right-4 z-50 rounded-lg text-center">
+          {error}
         </div>
       )}
       <div ref={mapContainer} className="w-full h-full" />

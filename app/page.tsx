@@ -1,12 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Circle30Map from '@/components/Circle30Map';
 import AskAI from '@/components/AskAI';
 import type { Visualization } from '../types/responses';
 
 export default function Home() {
   const [currentVisualizations, setCurrentVisualizations] = useState<Visualization[]>([]);
+
+  useEffect(() => {
+    console.log('TomTom API Key status:', process.env.NEXT_PUBLIC_TOMTOM_API_KEY ? 'Present' : 'Missing');
+  }, []);
 
   const handleVisualizationUpdate = (visualizations: Visualization[]) => {
     setCurrentVisualizations(visualizations);
