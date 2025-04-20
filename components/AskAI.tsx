@@ -33,6 +33,8 @@ export default function AskAI({ onResponse }: AskAIProps) {
       setIsLoading(true);
       const userMessage: Message = { role: 'user', content: input };
       setMessages(prev => [...prev, userMessage]);
+      // Clear input immediately after submission
+      setInput('');
       try {
         const res = await fetch(`${BACKEND_URL}/chat`, {
           method: "POST",
@@ -94,7 +96,6 @@ export default function AskAI({ onResponse }: AskAIProps) {
         setTypingMessage(null);
       } finally {
         setIsLoading(false);
-        setInput('');
       }
     }
   };
