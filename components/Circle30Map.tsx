@@ -120,7 +120,7 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         }
         const coords = feature.geometry.coordinates[0] as [number, number][];
         console.log('Processing feature coordinates:', {
-          featureId: feature.properties?.zipcode,
+          featureId: feature.properties?.ZIP,
           coordinateCount: coords.length,
           firstCoord: coords[0]
         });
