@@ -39,14 +39,18 @@ export default function Circle30Map({ visualization }: Circle30MapProps) {
 
   // Add new function to handle features
   const addFeaturesToMap = (map: maplibregl.Map, features: Feature[]) => {
+    console.log('Adding features to map:', features);
+    
     // Remove existing layers if any
     if (map.getSource('ev-data')) {
+      console.log('Removing existing layers');
       map.removeLayer('ev-points');
       map.removeLayer('zip-polygons');
       map.removeSource('ev-data');
     }
 
     // Add new source with all features
+    console.log('Adding new source and layers');
     map.addSource('ev-data', {
       type: 'geojson',
       data: {
@@ -123,6 +127,7 @@ export default function Circle30Map({ visualization }: Circle30MapProps) {
   useEffect(() => {
     const map = mapRef.current;
     if (map && visualization?.features) {
+      console.log('Visualization prop received:', visualization);
       addFeaturesToMap(map, visualization.features);
     }
   }, [visualization]); // Update when visualization changes

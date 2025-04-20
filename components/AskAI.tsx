@@ -37,9 +37,11 @@ export default function AskAI({ onQuery, onVisualizationUpdate }: {
           body: JSON.stringify({ message: input })
         });
         const data: AIResponse = await res.json();
+        console.log('Backend response:', data);
         
         // Handle visualization data if present
         if (data.visualizations?.[0]) {
+          console.log('Visualization data:', data.visualizations[0].data);
           onVisualizationUpdate(data.visualizations[0].data);
         }
 
