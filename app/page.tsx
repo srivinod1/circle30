@@ -3,12 +3,12 @@
 import Circle30Map from '@/components/Circle30Map';
 import AskAI from '@/components/AskAI';
 import { useState } from 'react';
-import { AIResponse } from '@/types/responses';
+import { ParsedAIResponse } from '@/types/responses';
 
 export default function Home() {
-  const [response, setResponse] = useState<AIResponse | undefined>();
+  const [response, setResponse] = useState<ParsedAIResponse | undefined>();
 
-  const handleResponse = (newResponse: AIResponse) => {
+  const handleResponse = (newResponse: ParsedAIResponse) => {
     console.log('Received response:', newResponse);
     setResponse(newResponse);
   };

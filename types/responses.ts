@@ -1,11 +1,43 @@
 // Response types for the AI chat
 export interface AIResponse {
-  text: string;
+  text: {
+    analysis: string;
+    zipCodes: Array<{
+      zip: string;
+      population: number;
+      evStations: number;
+      evPerCapita: number;
+    }>;
+  };
+  geojson: string;  // GeoJSON string that will be parsed into FeatureCollection
+}
+
+export interface ParsedAIResponse {
+  text: {
+    analysis: string;
+    zipCodes: Array<{
+      zip: string;
+      population: number;
+      evStations: number;
+      evPerCapita: number;
+    }>;
+  };
   geojson: {
     type: "FeatureCollection";
-    features: ZipCodeFeature[];
+    features: Array<{
+      type: "Feature";
+      geometry: {
+        type: "Polygon";
+        coordinates: number[][][];  // Array of coordinate rings
+      };
+      properties: {
+        ZIP: string;
+        population: number;
+        ev_poi_count: number;
+        evs_per_capita: number;
+      };
+    }>;
   };
-  error?: string;
 }
 
 export interface ZipCodeFeature {

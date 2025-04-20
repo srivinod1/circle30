@@ -3,10 +3,10 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { AIResponse } from '@/types/responses';
+import { ParsedAIResponse } from '@/types/responses';
 
 interface Circle30MapProps {
-  geojsonData?: AIResponse['geojson'];
+  geojsonData?: ParsedAIResponse['geojson'];
 }
 
 export default function Circle30Map({ geojsonData }: Circle30MapProps) {
@@ -37,7 +37,7 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
     return await res.json();
   };
 
-  const addFeaturesToMap = async (geojsonData: any) => {
+  const addFeaturesToMap = async (geojsonData: ParsedAIResponse['geojson']) => {
     try {
       if (!mapRef.current) {
         console.error('Map instance not initialized');
@@ -46,9 +46,9 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
 
       console.log('Adding features to map:', {
         mapLoaded: mapRef.current.loaded(),
-        geojsonDataType: typeof geojsonData,
-        geojsonFeatures: geojsonData?.features?.length,
-        geojsonData: JSON.stringify(geojsonData, null, 2)
+        geojsonType: geojsonData.type,
+        featureCount: geojsonData.features.length,
+        firstFeature: geojsonData.features[0]
       });
 
       // Check if source already exists
@@ -65,14 +65,8 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         mapRef.current.removeSource('zip-codes');
       }
 
-      // Validate GeoJSON structure
-      if (!geojsonData || !geojsonData.features || !Array.isArray(geojsonData.features)) {
-        console.error('Invalid GeoJSON structure:', geojsonData);
-        return;
-      }
-
       // Add new source
-      console.log('Adding new source with data:', geojsonData);
+      console.log('Adding new source with data');
       mapRef.current.addSource('zip-codes', {
         type: 'geojson',
         data: geojsonData
@@ -102,15 +96,13 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
       });
 
       // Fit bounds to show all features
-      if (geojsonData?.features?.length > 0) {
+      if (geojsonData.features.length > 0) {
         const bounds = new maplibregl.LngLatBounds();
-        geojsonData.features.forEach((feature: any) => {
-          if (feature.geometry?.coordinates) {
-            const coords = feature.geometry.coordinates[0];
-            coords.forEach((coord: [number, number]) => {
-              bounds.extend(coord);
-            });
-          }
+        geojsonData.features.forEach((feature) => {
+          const coords = feature.geometry.coordinates[0];
+          coords.forEach((coord) => {
+            bounds.extend(coord);
+          });
         });
         mapRef.current.fitBounds(bounds, { padding: 50 });
       }
@@ -119,7 +111,8 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
       console.error('Error adding features to map:', {
         error,
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
+        stack: error instanceof Error ? error.stack : undefined,
+        geojsonData: JSON.stringify(geojsonData, null, 2)
       });
       throw error;
     }
@@ -167,6 +160,17 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
     const map = mapRef.current;
     if (map && geojsonData) {
       console.log('Map style loaded:', map.isStyleLoaded());
+      console.log('Received GeoJSON data in useEffect:', {
+        type: geojsonData.type,
+        featureCount: geojsonData.features?.length,
+        firstFeature: geojsonData.features?.[0],
+        mapState: {
+          loaded: map.loaded(),
+          styleLoaded: map.isStyleLoaded(),
+          sources: map.getStyle().sources
+        }
+      });
+      
       if (map.isStyleLoaded()) {
         addFeaturesToMap(geojsonData);
       } else {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { AIResponse } from '@/types/responses';
+import { AIResponse, ParsedAIResponse } from '@/types/responses';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -11,7 +11,7 @@ interface Message {
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5002';
 
 interface AskAIProps {
-  onResponse: (response: AIResponse) => void;
+  onResponse: (response: ParsedAIResponse) => void;
 }
 
 export default function AskAI({ onResponse }: AskAIProps) {
@@ -40,23 +40,45 @@ export default function AskAI({ onResponse }: AskAIProps) {
           body: JSON.stringify({ message: input })
         });
         const data = await res.json();
-        console.log('Raw backend response:', data);
-        console.log('GeoJSON from backend:', data.geojson);
+        console.log('Raw backend response:', {
+          hasGeojson: !!data.geojson,
+          geojsonType: typeof data.geojson,
+          hasText: !!data.text,
+          textStructure: data.text
+        });
         
         if (data.error) {
           throw new Error(data.error);
         }
 
-        onResponse(data);
+        // Parse GeoJSON string into object if it's a string
+        const parsedData: ParsedAIResponse = {
+          text: data.text,
+          geojson: typeof data.geojson === 'string' ? JSON.parse(data.geojson) : data.geojson
+        };
+
+        console.log('Parsed response:', {
+          text: parsedData.text,
+          geojson: {
+            type: parsedData.geojson?.type,
+            featureCount: parsedData.geojson?.features?.length,
+            firstFeature: parsedData.geojson?.features?.[0]
+          }
+        });
+
+        onResponse(parsedData);
         
         setIsTyping(true);
         setTypingMessage('');
-        typeAssistantMessage(data.text, () => {
+        
+        // Format the text for display
+        const formattedText = formatAnalysisText(parsedData.text);
+        typeAssistantMessage(formattedText, () => {
           setIsTyping(false);
           setTypingMessage(null);
           setMessages(prev => [
             ...prev,
-            { role: 'assistant', content: data.text }
+            { role: 'assistant', content: formattedText }
           ]);
         });
       } catch (error) {
@@ -159,4 +181,21 @@ export default function AskAI({ onResponse }: AskAIProps) {
       </form>
     </div>
   );
+}
+
+function formatAnalysisText(textData: ParsedAIResponse['text']): string {
+  let formattedText = 'Step 1: Text Analysis\n\n';
+  formattedText += `Top 3 underserved ZIP codes (population > 10,000, sorted by lowest EV count per capita):\n\n`;
+
+  textData.zipCodes.forEach((zipData: ParsedAIResponse['text']['zipCodes'][0], index: number) => {
+    formattedText += `${index + 1}. ZIP code ${zipData.zip}\n`;
+    formattedText += `   - Population: ${zipData.population.toLocaleString()}\n`;
+    formattedText += `   - EV Charging Stations: ${zipData.evStations}\n`;
+    formattedText += `   - EV Count per Capita: ${zipData.evPerCapita.toFixed(4)}\n\n`;
+  });
+
+  formattedText += 'Brief Analysis:\n';
+  formattedText += textData.analysis;
+
+  return formattedText;
 }
