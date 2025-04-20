@@ -170,7 +170,7 @@ export default function AskAI({ onResponse }: AskAIProps) {
           />
           <button
             type="submit"
-            className={`w-full bg-indigo-600 text-white font-medium px-4 py-2 rounded-xl hover:bg-indigo-500 transition-colors ${
+            className={`w-full bg-[#FF0000] text-white font-medium px-4 py-2 rounded-xl hover:bg-[#CC0000] transition-colors ${
               isLoading || isTyping ? 'opacity-50 cursor-not-allowed' : ''
             }`}
             disabled={isLoading || isTyping}
