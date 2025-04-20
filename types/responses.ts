@@ -11,30 +11,46 @@ export interface Visualization {
 
 export interface MapVisualization {
   features: Feature[];
-  config?: {
-    fitBounds?: boolean;
-    center?: [number, number];
-    zoom?: number;
+  config: MapConfig;
+}
+
+export interface MapConfig {
+  fitBounds: boolean;
+  bounds?: {
+    southWest: [number, number];  // [lon, lat]
+    northEast: [number, number];  // [lon, lat]
   };
+  center: [number, number];  // [lon, lat]
+  zoom: number;
 }
 
 export interface Feature {
   type: 'Feature';
   geometry: {
-    type: 'Point' | 'LineString' | 'Polygon';
-    coordinates: number[] | number[][] | number[][][];
+    type: 'Polygon' | 'Point';
+    coordinates: number[][][] | number[];  // For Polygon: array of coordinate rings, for Point: [lon, lat]
   };
   properties: {
     id: string;
-    title?: string;
-    data?: Record<string, string | number>;
-    style?: {
-      color?: string;
-      radius?: number;
-      fillColor?: string;
-      fillOpacity?: number;
-      weight?: number;
-      opacity?: number;
-    };
+    title: string;
+    data: FeatureData;
+    style: FeatureStyle;
   };
+}
+
+export interface FeatureData {
+  zipCode?: string;
+  evStationCount?: number;
+  population?: number;
+  evStationsPerCapita?: number;
+  type?: 'EV Station';
+}
+
+export interface FeatureStyle {
+  fillColor?: string;
+  fillOpacity?: number;
+  strokeColor?: string;
+  strokeWidth?: number;
+  color?: string;
+  radius?: number;
 } 

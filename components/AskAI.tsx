@@ -1,13 +1,17 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { AIResponse } from '@/types/responses';
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
 }
 
-export default function AskAI({ onQuery }: { onQuery: (query: string) => void }) {
+export default function AskAI({ onQuery, onVisualizationUpdate }: { 
+  onQuery: (query: string) => void;
+  onVisualizationUpdate: (visualization: any) => void;
+}) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -32,19 +36,22 @@ export default function AskAI({ onQuery }: { onQuery: (query: string) => void })
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: input })
         });
-        const data = await res.json();
-        if (!data.response) {
-          throw new Error('Invalid response format from AI agent');
+        const data: AIResponse = await res.json();
+        
+        // Handle visualization data if present
+        if (data.visualizations?.[0]) {
+          onVisualizationUpdate(data.visualizations[0].data);
         }
+
         setIsTyping(true);
         setTypingMessage('');
         // Animate the assistant's response
-        typeAssistantMessage(data.response, () => {
+        typeAssistantMessage(data.text, () => {
           setIsTyping(false);
           setTypingMessage(null);
           setMessages(prev => [
             ...prev,
-            { role: 'assistant', content: data.response }
+            { role: 'assistant', content: data.text }
           ]);
         });
         onQuery(input);

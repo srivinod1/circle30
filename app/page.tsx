@@ -2,12 +2,19 @@
 
 import Circle30Map from '@/components/Circle30Map';
 import AskAI from '@/components/AskAI';
+import { useState } from 'react';
+import { MapVisualization } from '@/types/responses';
 
 export default function Home() {
+  const [currentVisualization, setCurrentVisualization] = useState<MapVisualization | undefined>();
+
   const handleQuery = (query: string) => {
     console.log('User asked:', query);
-    // We don't need to do anything here anymore since the AskAI component
-    // handles the API call directly
+  };
+
+  const handleVisualizationUpdate = (visualization: MapVisualization) => {
+    console.log('Received visualization data:', visualization);
+    setCurrentVisualization(visualization);
   };
 
   return (
@@ -17,8 +24,11 @@ export default function Home() {
       </header>
 
       <div className="flex-1 relative">
-        <Circle30Map />
-        <AskAI onQuery={handleQuery} />
+        <Circle30Map visualization={currentVisualization} />
+        <AskAI 
+          onQuery={handleQuery} 
+          onVisualizationUpdate={handleVisualizationUpdate}
+        />
       </div>
     </main>
   );

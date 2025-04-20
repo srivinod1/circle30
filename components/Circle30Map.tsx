@@ -3,8 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { MapVisualization, Feature } from '@/types/responses';
 
-export default function Circle30Map() {
+interface Circle30MapProps {
+  visualization?: MapVisualization;
+}
+
+export default function Circle30Map({ visualization }: Circle30MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +37,51 @@ export default function Circle30Map() {
     return await res.json();
   };
 
+  // Add new function to handle features
+  const addFeaturesToMap = (map: maplibregl.Map, features: Feature[]) => {
+    // Remove existing layers if any
+    if (map.getSource('ev-data')) {
+      map.removeLayer('ev-points');
+      map.removeLayer('zip-polygons');
+      map.removeSource('ev-data');
+    }
+
+    // Add new source with all features
+    map.addSource('ev-data', {
+      type: 'geojson',
+      data: {
+        type: 'FeatureCollection',
+        features: features
+      }
+    });
+
+    // Add ZIP code polygons layer
+    map.addLayer({
+      id: 'zip-polygons',
+      type: 'fill',
+      source: 'ev-data',
+      filter: ['==', ['geometry-type'], 'Polygon'],
+      paint: {
+        'fill-color': ['get', ['get', 'fillColor', ['get', 'style']]],
+        'fill-opacity': ['get', ['get', 'fillOpacity', ['get', 'style']]],
+        'fill-outline-color': ['get', ['get', 'strokeColor', ['get', 'style']]],
+      }
+    });
+
+    // Add EV station points layer
+    map.addLayer({
+      id: 'ev-points',
+      type: 'circle',
+      source: 'ev-data',
+      filter: ['==', ['geometry-type'], 'Point'],
+      paint: {
+        'circle-radius': ['get', ['get', 'radius', ['get', 'style']]],
+        'circle-color': ['get', ['get', 'color', ['get', 'style']]],
+        'circle-opacity': 0.8
+      }
+    });
+  };
+
   useEffect(() => {
     if (!mapContainer.current) return;
 
@@ -43,12 +93,19 @@ export default function Circle30Map() {
         const map = new maplibregl.Map({
           container: mapContainer.current!,
           style,
-          center: [-74.0060, 40.7128], // 🗽 New York City
+          center: [-74.0060, 40.7128], // Default to NYC
           zoom: 12
         });
 
         map.addControl(new maplibregl.NavigationControl(), 'top-right');
         mapRef.current = map;
+
+        // Wait for map to load before adding features
+        map.on('load', () => {
+          if (visualization?.features) {
+            addFeaturesToMap(map, visualization.features);
+          }
+        });
       } catch (err: any) {
         console.error('Map load error:', err);
         setError(err.message || 'Unknown error loading map.');
@@ -60,7 +117,15 @@ export default function Circle30Map() {
     return () => {
       mapRef.current?.remove();
     };
-  }, []);
+  }, []); // Initial map load
+
+  // Handle visualization updates
+  useEffect(() => {
+    const map = mapRef.current;
+    if (map && visualization?.features) {
+      addFeaturesToMap(map, visualization.features);
+    }
+  }, [visualization]); // Update when visualization changes
 
   return (
     <div style={{ width: '100%', height: '100%', backgroundColor: '#0F172A', position: 'absolute', inset: 0 }}>
