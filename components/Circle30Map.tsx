@@ -103,8 +103,8 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
       // Fit bounds to show all features
       const bounds = new maplibregl.LngLatBounds();
       geojsonData.features.forEach((feature) => {
-        const coords = feature.geometry.coordinates[0];
-        coords.forEach((coord: [number, number]) => {
+        const coords = feature.geometry.coordinates[0] as [number, number][];
+        coords.forEach((coord) => {
           bounds.extend(coord as maplibregl.LngLatLike);
         });
       });
