@@ -63,7 +63,7 @@ export default function Circle30Map() {
   }, []);
 
   return (
-    <div style={{ width: '100%', height: '100vh', backgroundColor: '#0F172A' }}>
+    <div style={{ width: '100%', height: '100%', backgroundColor: '#0F172A', position: 'absolute', inset: 0 }}>
       {error && (
         <div className="text-red-400 bg-gray-900 p-4 absolute top-0 left-0 z-50">
           Map error: {error}

@@ -11,13 +11,15 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0F172A] text-[#E2E8F0] font-sans relative">
-      <header className="p-4 border-b border-[#1E293B] text-xl font-bold z-50 relative bg-[#0F172A]">
+    <main className="h-screen flex flex-col bg-[#0F172A] text-[#E2E8F0] font-sans relative overflow-hidden">
+      <header className="p-4 border-b border-[#1E293B] text-xl font-bold z-50 bg-[#0F172A]">
         Circle30
       </header>
 
-      <Circle30Map />
-      <AskAI onQuery={handleQuery} />
+      <div className="flex-1 relative">
+        <Circle30Map />
+        <AskAI onQuery={handleQuery} />
+      </div>
     </main>
   );
 }
