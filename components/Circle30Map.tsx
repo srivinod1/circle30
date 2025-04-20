@@ -47,7 +47,8 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
       console.log('Adding features to map:', {
         mapLoaded: mapRef.current.loaded(),
         geojsonDataType: typeof geojsonData,
-        geojsonFeatures: geojsonData?.features?.length
+        geojsonFeatures: geojsonData?.features?.length,
+        geojsonData: JSON.stringify(geojsonData, null, 2)
       });
 
       // Check if source already exists
@@ -62,6 +63,12 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
           mapRef.current.removeLayer('zip-codes-outline');
         }
         mapRef.current.removeSource('zip-codes');
+      }
+
+      // Validate GeoJSON structure
+      if (!geojsonData || !geojsonData.features || !Array.isArray(geojsonData.features)) {
+        console.error('Invalid GeoJSON structure:', geojsonData);
+        return;
       }
 
       // Add new source
