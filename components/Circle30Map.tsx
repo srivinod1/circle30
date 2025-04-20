@@ -112,15 +112,25 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
 
       // Fit bounds to show all features
       const bounds = new maplibregl.LngLatBounds();
+      console.log('Calculating bounds for features:', geojsonData.features.length);
       geojsonData.features.forEach((feature) => {
         if (!feature.geometry || !feature.geometry.coordinates || !Array.isArray(feature.geometry.coordinates[0])) {
           console.error('Invalid feature geometry:', feature);
           return;
         }
         const coords = feature.geometry.coordinates[0] as [number, number][];
+        console.log('Processing feature coordinates:', {
+          featureId: feature.properties?.zipcode,
+          coordinateCount: coords.length,
+          firstCoord: coords[0]
+        });
         coords.forEach((coord) => {
           bounds.extend(coord as maplibregl.LngLatLike);
         });
+      });
+      console.log('Final bounds:', {
+        sw: bounds.getSouthWest(),
+        ne: bounds.getNorthEast()
       });
       mapRef.current.fitBounds(bounds, { padding: 50 });
 
