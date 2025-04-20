@@ -119,26 +119,55 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
       });
 
       // Add hover effect
-      mapRef.current.on('mousemove', 'zip-codes-fill', (e) => {
-        if (e.features && e.features.length > 0) {
-          const feature = e.features[0];
-          const zipCode = feature.properties?.ZIP;
-          const population = feature.properties?.population;
-          const evCount = feature.properties?.ev_poi_count;
-          const evPerCapita = feature.properties?.evs_per_capita;
-          
-          // Show popup
-          new maplibregl.Popup()
-            .setLngLat(e.lngLat)
-            .setHTML(`
-              <div class="p-2">
-                <h3 class="font-bold">ZIP Code ${zipCode}</h3>
-                <p>Population: ${population.toLocaleString()}</p>
-                <p>EV Charging Stations: ${evCount}</p>
-                <p>EVs per Capita: ${evPerCapita.toFixed(6)}</p>
-              </div>
-            `)
-            .addTo(mapRef.current!);
+      let popup: maplibregl.Popup | null = null;
+      let hoverTimeout: NodeJS.Timeout | null = null;
+
+      mapRef.current.on('mouseenter', 'zip-codes-fill', (e) => {
+        if (hoverTimeout) {
+          clearTimeout(hoverTimeout);
+        }
+
+        hoverTimeout = setTimeout(() => {
+          if (e.features && e.features.length > 0) {
+            const feature = e.features[0];
+            const zipCode = feature.properties?.ZIP;
+            const population = feature.properties?.population;
+            const evCount = feature.properties?.ev_poi_count;
+            const evPerCapita = feature.properties?.evs_per_capita;
+            
+            // Remove existing popup if any
+            if (popup) {
+              popup.remove();
+            }
+            
+            // Create new popup
+            popup = new maplibregl.Popup({
+              closeButton: false,
+              closeOnClick: false,
+              offset: 10
+            })
+              .setLngLat(e.lngLat)
+              .setHTML(`
+                <div class="p-2">
+                  <h3 class="font-bold">ZIP Code ${zipCode}</h3>
+                  <p>Population: ${population.toLocaleString()}</p>
+                  <p>EV Charging Stations: ${evCount}</p>
+                  <p>EVs per Capita: ${evPerCapita.toFixed(6)}</p>
+                </div>
+              `)
+              .addTo(mapRef.current!);
+          }
+        }, 100); // 100ms delay
+      });
+
+      mapRef.current.on('mouseleave', 'zip-codes-fill', () => {
+        if (hoverTimeout) {
+          clearTimeout(hoverTimeout);
+          hoverTimeout = null;
+        }
+        if (popup) {
+          popup.remove();
+          popup = null;
         }
       });
 
