@@ -8,6 +8,8 @@ interface Message {
   content: string;
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5002';
+
 export default function AskAI({ onQuery, onVisualizationUpdate }: { 
   onQuery: (query: string) => void;
   onVisualizationUpdate: (visualization: any) => void;
@@ -31,7 +33,7 @@ export default function AskAI({ onQuery, onVisualizationUpdate }: {
       const userMessage: Message = { role: 'user', content: input };
       setMessages(prev => [...prev, userMessage]);
       try {
-        const res = await fetch("http://localhost:5002/chat", {
+        const res = await fetch(`${BACKEND_URL}/chat`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: input })
