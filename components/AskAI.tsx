@@ -118,7 +118,7 @@ export default function AskAI({ onResponse }: AskAIProps) {
     <div className="fixed right-6 top-[10vh] bottom-[10vh] bg-gray-800 p-4 rounded-2xl shadow-xl w-[400px] max-w-[90%] z-50 flex flex-col text-white">
       {/* Chat header */}
       <div className="mb-4 pb-3 border-b border-gray-600">
-        <h3 className="text-lg font-semibold text-white">EV Analyst Powered by TomTom Orbis</h3>
+        <h3 className="text-2xl font-semibold text-white">EV Charging Infra Analyst</h3>
       </div>
 
       {/* Messages container */}
