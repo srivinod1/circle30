@@ -44,8 +44,18 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         return;
       }
 
-      if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
-        console.log('No GeoJSON data to add to map');
+      if (!geojsonData) {
+        console.error('No GeoJSON data provided');
+        return;
+      }
+
+      if (!geojsonData.features || !Array.isArray(geojsonData.features)) {
+        console.error('Invalid GeoJSON features:', geojsonData);
+        return;
+      }
+
+      if (geojsonData.features.length === 0) {
+        console.log('No features to add to map');
         return;
       }
 
@@ -103,6 +113,10 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
       // Fit bounds to show all features
       const bounds = new maplibregl.LngLatBounds();
       geojsonData.features.forEach((feature) => {
+        if (!feature.geometry || !feature.geometry.coordinates || !Array.isArray(feature.geometry.coordinates[0])) {
+          console.error('Invalid feature geometry:', feature);
+          return;
+        }
         const coords = feature.geometry.coordinates[0] as [number, number][];
         coords.forEach((coord) => {
           bounds.extend(coord as maplibregl.LngLatLike);
