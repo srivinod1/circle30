@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import type { ChatResponse } from '@/types/responses';
+import type { AIResponse } from '@/types/responses';
 
 const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:5002';
 
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       throw new Error(`Backend responded with ${response.status}`);
     }
 
-    const data = await response.json();
+    const data: AIResponse = await response.json();
     return NextResponse.json(data);
 
   } catch (error) {
