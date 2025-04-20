@@ -44,6 +44,11 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         return;
       }
 
+      if (!geojsonData || !geojsonData.features || geojsonData.features.length === 0) {
+        console.log('No GeoJSON data to add to map');
+        return;
+      }
+
       console.log('Adding features to map:', {
         mapLoaded: mapRef.current.loaded(),
         geojsonType: geojsonData.type,
@@ -96,16 +101,14 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
       });
 
       // Fit bounds to show all features
-      if (geojsonData.features.length > 0) {
-        const bounds = new maplibregl.LngLatBounds();
-        geojsonData.features.forEach((feature) => {
-          const coords = feature.geometry.coordinates[0];
-          coords.forEach((coord) => {
-            bounds.extend(coord);
-          });
+      const bounds = new maplibregl.LngLatBounds();
+      geojsonData.features.forEach((feature) => {
+        const coords = feature.geometry.coordinates[0];
+        coords.forEach((coord: [number, number]) => {
+          bounds.extend(coord as maplibregl.LngLatLike);
         });
-        mapRef.current.fitBounds(bounds, { padding: 50 });
-      }
+      });
+      mapRef.current.fitBounds(bounds, { padding: 50 });
 
     } catch (error) {
       console.error('Error adding features to map:', {
@@ -129,7 +132,7 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         const map = new maplibregl.Map({
           container: mapContainer.current!,
           style,
-          center: [-74.0060, 40.7128], // Default to NYC
+          center: [-97.7431, 30.2672], // Default to Austin
           zoom: 12
         });
 
