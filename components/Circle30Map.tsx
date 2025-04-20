@@ -37,40 +37,84 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
     return await res.json();
   };
 
-  const addFeaturesToMap = (map: maplibregl.Map, geojsonData: any) => {
-    console.log('Map instance:', map);
-    console.log('Attempting to add features:', geojsonData);
-
-    // Remove existing layers if any
-    if (map.getSource('zip-data')) {
-      console.log('Removing existing layers');
-      if (map.getLayer('zip-polygons-hover')) map.removeLayer('zip-polygons-hover');
-      if (map.getLayer('zip-polygons')) map.removeLayer('zip-polygons');
-      map.removeSource('zip-data');
-    }
-
+  const addFeaturesToMap = async (geojsonData: any) => {
     try {
+      if (!mapRef.current) {
+        console.error('Map instance not initialized');
+        return;
+      }
+
+      console.log('Adding features to map:', {
+        mapLoaded: mapRef.current.loaded(),
+        geojsonDataType: typeof geojsonData,
+        geojsonFeatures: geojsonData?.features?.length
+      });
+
+      // Check if source already exists
+      const existingSource = mapRef.current.getSource('zip-codes');
+      if (existingSource) {
+        console.log('Removing existing source');
+        // Remove layers first
+        if (mapRef.current.getLayer('zip-codes-fill')) {
+          mapRef.current.removeLayer('zip-codes-fill');
+        }
+        if (mapRef.current.getLayer('zip-codes-outline')) {
+          mapRef.current.removeLayer('zip-codes-outline');
+        }
+        mapRef.current.removeSource('zip-codes');
+      }
+
       // Add new source
-      map.addSource('zip-data', {
+      console.log('Adding new source with data:', geojsonData);
+      mapRef.current.addSource('zip-codes', {
         type: 'geojson',
         data: geojsonData
       });
-      console.log('Added source successfully');
 
-      // Add ZIP code polygons layer
-      map.addLayer({
-        id: 'zip-polygons',
+      // Add layers
+      console.log('Adding fill layer');
+      mapRef.current.addLayer({
+        id: 'zip-codes-fill',
         type: 'fill',
-        source: 'zip-data',
+        source: 'zip-codes',
         paint: {
-          'fill-color': '#ff0000',  // Simplified color for testing
-          'fill-opacity': 0.5,
-          'fill-outline-color': '#000000'
+          'fill-color': '#0080ff',
+          'fill-opacity': 0.5
         }
       });
-      console.log('Added layer successfully');
+
+      console.log('Adding outline layer');
+      mapRef.current.addLayer({
+        id: 'zip-codes-outline',
+        type: 'line',
+        source: 'zip-codes',
+        paint: {
+          'line-color': '#000',
+          'line-width': 1
+        }
+      });
+
+      // Fit bounds to show all features
+      if (geojsonData?.features?.length > 0) {
+        const bounds = new maplibregl.LngLatBounds();
+        geojsonData.features.forEach((feature: any) => {
+          if (feature.geometry?.coordinates) {
+            const coords = feature.geometry.coordinates[0];
+            coords.forEach((coord: [number, number]) => {
+              bounds.extend(coord);
+            });
+          }
+        });
+        mapRef.current.fitBounds(bounds, { padding: 50 });
+      }
+
     } catch (error) {
-      console.error('Error adding features to map:', error);
+      console.error('Error adding features to map:', {
+        error,
+        errorMessage: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined
+      });
+      throw error;
     }
   };
 
@@ -95,7 +139,7 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         // Wait for map to load before adding features
         map.on('load', () => {
           if (geojsonData) {
-            addFeaturesToMap(map, geojsonData);
+            addFeaturesToMap(geojsonData);
           }
         });
       } catch (err: any) {
@@ -117,11 +161,11 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
     if (map && geojsonData) {
       console.log('Map style loaded:', map.isStyleLoaded());
       if (map.isStyleLoaded()) {
-        addFeaturesToMap(map, geojsonData);
+        addFeaturesToMap(geojsonData);
       } else {
         map.once('style.load', () => {
           console.log('Style now loaded, adding features');
-          addFeaturesToMap(map, geojsonData);
+          addFeaturesToMap(geojsonData);
         });
       }
     }
