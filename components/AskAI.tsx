@@ -118,7 +118,7 @@ export default function AskAI({ onResponse }: AskAIProps) {
     <div className="fixed right-6 top-[10vh] bottom-[10vh] bg-gray-800 p-4 rounded-2xl shadow-xl w-[400px] max-w-[90%] z-50 flex flex-col text-white">
       {/* Chat header */}
       <div className="mb-4 pb-3 border-b border-gray-600">
-        <h3 className="text-2xl font-semibold text-white">EV Charging Infra Analyst</h3>
+        <h3 className="text-2xl font-semibold text-white">EV Analyst</h3>
       </div>
 
       {/* Messages container */}
@@ -160,7 +160,7 @@ export default function AskAI({ onResponse }: AskAIProps) {
       <form onSubmit={handleSubmit} className="mt-auto border-t border-gray-600 pt-4">
         <div className="flex flex-col gap-2">
           <textarea
-            placeholder="Ask about EV charging access..."
+            placeholder="Type to question.."
             value={input}
             onChange={(e) => setInput(e.target.value)}
             className="w-full bg-gray-700 text-white placeholder-gray-400 outline-none px-4 py-2 rounded-lg border border-gray-600 focus:border-indigo-500 transition-colors resize-none"
