@@ -49,6 +49,12 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         return;
       }
 
+      console.log('Processing GeoJSON data:', {
+        type: geojsonData.type,
+        features: geojsonData.features?.length,
+        firstFeature: geojsonData.features?.[0]
+      });
+
       if (!geojsonData.features || !Array.isArray(geojsonData.features)) {
         console.error('Invalid GeoJSON features:', geojsonData);
         return;
@@ -58,13 +64,6 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         console.log('No features to add to map');
         return;
       }
-
-      console.log('Adding features to map:', {
-        mapLoaded: mapRef.current.loaded(),
-        geojsonType: geojsonData.type,
-        featureCount: geojsonData.features.length,
-        firstFeature: geojsonData.features[0]
-      });
 
       // Check if source already exists
       const existingSource = mapRef.current.getSource('zip-codes');
@@ -87,18 +86,27 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         data: geojsonData
       });
 
-      // Add layers
+      // Add fill layer with color scale based on EV count per capita
       console.log('Adding fill layer');
       mapRef.current.addLayer({
         id: 'zip-codes-fill',
         type: 'fill',
         source: 'zip-codes',
         paint: {
-          'fill-color': '#0080ff',
-          'fill-opacity': 0.5
+          'fill-color': [
+            'interpolate',
+            ['linear'],
+            ['get', 'evs_per_capita'],
+            0, '#ffeda0',    // Yellow for lowest
+            0.0001, '#feb24c', // Orange
+            0.0002, '#f03b20', // Red
+            0.0003, '#bd0026'  // Dark red for highest
+          ],
+          'fill-opacity': 0.7
         }
       });
 
+      // Add outline layer
       console.log('Adding outline layer');
       mapRef.current.addLayer({
         id: 'zip-codes-outline',
@@ -110,32 +118,81 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         }
       });
 
+      // Add hover effect
+      mapRef.current.on('mousemove', 'zip-codes-fill', (e) => {
+        if (e.features && e.features.length > 0) {
+          const feature = e.features[0];
+          const zipCode = feature.properties?.ZIP;
+          const population = feature.properties?.population;
+          const evCount = feature.properties?.ev_poi_count;
+          const evPerCapita = feature.properties?.evs_per_capita;
+          
+          // Show popup
+          new maplibregl.Popup()
+            .setLngLat(e.lngLat)
+            .setHTML(`
+              <div class="p-2">
+                <h3 class="font-bold">ZIP Code ${zipCode}</h3>
+                <p>Population: ${population.toLocaleString()}</p>
+                <p>EV Charging Stations: ${evCount}</p>
+                <p>EVs per Capita: ${evPerCapita.toFixed(6)}</p>
+              </div>
+            `)
+            .addTo(mapRef.current!);
+        }
+      });
+
+      // Change cursor to pointer when hovering over ZIP codes
+      mapRef.current.on('mouseenter', 'zip-codes-fill', () => {
+        mapRef.current!.getCanvas().style.cursor = 'pointer';
+      });
+
+      mapRef.current.on('mouseleave', 'zip-codes-fill', () => {
+        mapRef.current!.getCanvas().style.cursor = '';
+      });
+
       // Fit bounds to show all features
       const bounds = new maplibregl.LngLatBounds();
       console.log('Calculating bounds for features:', geojsonData.features.length);
-      geojsonData.features.forEach((feature) => {
-        if (!feature.geometry || !feature.geometry.coordinates || !Array.isArray(feature.geometry.coordinates[0])) {
-          console.error('Invalid feature geometry:', feature);
-          return;
+      
+      geojsonData.features.forEach((feature, index) => {
+        try {
+          if (!feature.geometry) {
+            console.error(`Feature ${index} has no geometry:`, feature);
+            return;
+          }
+          if (!feature.geometry.coordinates) {
+            console.error(`Feature ${index} has no coordinates:`, feature);
+            return;
+          }
+          if (!Array.isArray(feature.geometry.coordinates[0])) {
+            console.error(`Feature ${index} has invalid coordinates structure:`, feature);
+            return;
+          }
+          
+          const coords = feature.geometry.coordinates[0] as [number, number][];
+          console.log(`Processing feature ${index} coordinates:`, {
+            featureId: feature.properties?.ZIP,
+            coordinateCount: coords.length,
+            firstCoord: coords[0]
+          });
+          
+          coords.forEach((coord) => {
+            bounds.extend(coord as maplibregl.LngLatLike);
+          });
+        } catch (error) {
+          console.error(`Error processing feature ${index}:`, error);
         }
-        const coords = feature.geometry.coordinates[0] as [number, number][];
-        console.log('Processing feature coordinates:', {
-          featureId: feature.properties?.ZIP,
-          coordinateCount: coords.length,
-          firstCoord: coords[0]
-        });
-        coords.forEach((coord) => {
-          bounds.extend(coord as maplibregl.LngLatLike);
-        });
       });
+      
       console.log('Final bounds:', {
         sw: bounds.getSouthWest(),
         ne: bounds.getNorthEast()
       });
+      
       mapRef.current.fitBounds(bounds, { padding: 50 });
-
     } catch (error) {
-      console.error('Error adding features to map:', {
+      console.error('Error in addFeaturesToMap:', {
         error,
         errorMessage: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
