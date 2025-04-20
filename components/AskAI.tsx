@@ -125,7 +125,7 @@ export default function AskAI({ onResponse }: AskAIProps) {
       <div className="flex-1 overflow-y-auto mb-4 space-y-4 custom-scrollbar">
         {messages.length === 0 && !typingMessage ? (
           <div className="text-gray-400 text-sm italic p-3">
-            Powered by TomTom Orbis Maps
+            Ask about EV charging access, location, distribution, and more across US..
           </div>
         ) : (
           <>
