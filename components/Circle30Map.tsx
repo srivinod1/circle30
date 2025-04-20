@@ -133,6 +133,7 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
             const zipCode = feature.properties?.ZIP;
             const population = feature.properties?.population;
             const evCount = feature.properties?.ev_poi_count;
+            const evPerCapita = feature.properties?.evs_per_capita;
             
             // Remove existing popup if any
             if (popup) {
@@ -152,6 +153,7 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
                   <h3 class="font-bold text-lg">ZIP Code ${zipCode}</h3>
                   <p class="text-base">Population: ${population.toLocaleString()}</p>
                   <p class="text-base">EV Charging Stations: ${evCount}</p>
+                  <p class="text-base">EV Charging Stations per Capita: ${evPerCapita.toFixed(6)}</p>
                 </div>
               `)
               .addTo(mapRef.current!);
