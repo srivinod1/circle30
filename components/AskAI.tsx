@@ -184,18 +184,25 @@ export default function AskAI({ onResponse }: AskAIProps) {
 }
 
 function formatAnalysisText(textData: ParsedAIResponse['text']): string {
-  let formattedText = 'Step 1: Text Analysis\n\n';
-  formattedText += `Top 3 underserved ZIP codes (population > 10,000, sorted by lowest EV count per capita):\n\n`;
+  if (!textData) {
+    return 'No analysis data available.';
+  }
 
-  textData.zipCodes.forEach((zipData: ParsedAIResponse['text']['zipCodes'][0], index: number) => {
-    formattedText += `${index + 1}. ZIP code ${zipData.zip}\n`;
-    formattedText += `   - Population: ${zipData.population.toLocaleString()}\n`;
-    formattedText += `   - EV Charging Stations: ${zipData.evStations}\n`;
-    formattedText += `   - EV Count per Capita: ${zipData.evPerCapita.toFixed(4)}\n\n`;
+  let formattedText = `${textData.title}\n\n`;
+
+  if (!textData.zipCodes || !Array.isArray(textData.zipCodes)) {
+    return 'No ZIP code data available.';
+  }
+
+  textData.zipCodes.forEach((zipData, index) => {
+    formattedText += `${index + 1}. ZIP code ${zipData.zipCode}\n`;
+    formattedText += `   - Population: ${zipData.population}\n`;
+    formattedText += `   - EV Charging Stations: ${zipData.evCount}\n`;
+    formattedText += `   - EV Count per Capita: ${zipData.evCountPerCapita}\n\n`;
   });
 
-  formattedText += 'Brief Analysis:\n';
-  formattedText += textData.analysis;
+  formattedText += 'Analysis:\n';
+  formattedText += textData.analysis || 'No analysis available.';
 
   return formattedText;
 }

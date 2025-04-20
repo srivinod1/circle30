@@ -1,43 +1,28 @@
+import { FeatureCollection, Polygon } from 'geojson';
+
 // Response types for the AI chat
 export interface AIResponse {
   text: {
+    title: string;
+    zipCodes: {
+      zipCode: string;
+      population: string;
+      evCount: string;
+      evCountPerCapita: string;
+    }[];
     analysis: string;
-    zipCodes: Array<{
-      zip: string;
-      population: number;
-      evStations: number;
-      evPerCapita: number;
-    }>;
   };
-  geojson: string;  // GeoJSON string that will be parsed into FeatureCollection
+  geojson: string;
 }
 
 export interface ParsedAIResponse {
-  text: {
-    analysis: string;
-    zipCodes: Array<{
-      zip: string;
-      population: number;
-      evStations: number;
-      evPerCapita: number;
-    }>;
-  };
-  geojson: {
-    type: "FeatureCollection";
-    features: Array<{
-      type: "Feature";
-      geometry: {
-        type: "Polygon";
-        coordinates: number[][][];  // Array of coordinate rings
-      };
-      properties: {
-        ZIP: string;
-        population: number;
-        ev_poi_count: number;
-        evs_per_capita: number;
-      };
-    }>;
-  };
+  text: AIResponse['text'];
+  geojson: FeatureCollection<Polygon, {
+    ZIP: string;
+    population: number;
+    ev_poi_count: number;
+    evs_per_capita: number;
+  }>;
 }
 
 export interface ZipCodeFeature {
