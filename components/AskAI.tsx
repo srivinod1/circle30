@@ -160,10 +160,10 @@ export default function AskAI({ onResponse }: AskAIProps) {
       <form onSubmit={handleSubmit} className="mt-auto border-t border-gray-600 pt-4">
         <div className="flex flex-col gap-2">
           <textarea
-            placeholder="Type to question.."
+            placeholder="Type your question..."
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            className="w-full bg-gray-700 text-white placeholder-gray-400 outline-none px-4 py-2 rounded-lg border border-gray-600 focus:border-indigo-500 transition-colors resize-none"
+            className="w-full bg-gray-700 text-white placeholder-gray-400 placeholder:italic outline-none px-4 py-2 rounded-lg border border-gray-600 focus:border-indigo-500 transition-colors resize-none"
             disabled={isLoading || isTyping}
             rows={2}
             style={{ minHeight: '40px', maxHeight: '120px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}
