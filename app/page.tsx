@@ -3,18 +3,14 @@
 import Circle30Map from '@/components/Circle30Map';
 import AskAI from '@/components/AskAI';
 import { useState } from 'react';
-import { MapVisualization } from '@/types/responses';
+import { AIResponse } from '@/types/responses';
 
 export default function Home() {
-  const [currentVisualization, setCurrentVisualization] = useState<MapVisualization | undefined>();
+  const [response, setResponse] = useState<AIResponse | undefined>();
 
-  const handleQuery = (query: string) => {
-    console.log('User asked:', query);
-  };
-
-  const handleVisualizationUpdate = (visualization: MapVisualization) => {
-    console.log('Received visualization data:', visualization);
-    setCurrentVisualization(visualization);
+  const handleResponse = (newResponse: AIResponse) => {
+    console.log('Received response:', newResponse);
+    setResponse(newResponse);
   };
 
   return (
@@ -24,11 +20,8 @@ export default function Home() {
       </header>
 
       <div className="flex-1 relative">
-        <Circle30Map visualization={currentVisualization} />
-        <AskAI 
-          onQuery={handleQuery} 
-          onVisualizationUpdate={handleVisualizationUpdate}
-        />
+        <Circle30Map geojsonData={response?.geojson} />
+        <AskAI onResponse={handleResponse} />
       </div>
     </main>
   );

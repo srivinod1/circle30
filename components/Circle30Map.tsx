@@ -3,13 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { MapVisualization, Feature } from '@/types/responses';
+import { AIResponse } from '@/types/responses';
 
 interface Circle30MapProps {
-  visualization?: MapVisualization;
+  geojsonData?: AIResponse['geojson'];
 }
 
-export default function Circle30Map({ visualization }: Circle30MapProps) {
+export default function Circle30Map({ geojsonData }: Circle30MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,52 +37,48 @@ export default function Circle30Map({ visualization }: Circle30MapProps) {
     return await res.json();
   };
 
-  // Add new function to handle features
-  const addFeaturesToMap = (map: maplibregl.Map, features: Feature[]) => {
-    console.log('Adding features to map:', features);
-    
+  const addFeaturesToMap = (map: maplibregl.Map, geojsonData: AIResponse['geojson']) => {
     // Remove existing layers if any
-    if (map.getSource('ev-data')) {
-      console.log('Removing existing layers');
-      map.removeLayer('ev-points');
+    if (map.getSource('zip-data')) {
       map.removeLayer('zip-polygons');
-      map.removeSource('ev-data');
+      map.removeSource('zip-data');
     }
 
     // Add new source with all features
-    console.log('Adding new source and layers');
-    map.addSource('ev-data', {
+    map.addSource('zip-data', {
       type: 'geojson',
-      data: {
-        type: 'FeatureCollection',
-        features: features
-      }
+      data: geojsonData
     });
 
     // Add ZIP code polygons layer
     map.addLayer({
       id: 'zip-polygons',
       type: 'fill',
-      source: 'ev-data',
-      filter: ['==', ['geometry-type'], 'Polygon'],
+      source: 'zip-data',
       paint: {
-        'fill-color': ['get', ['get', 'fillColor', ['get', 'style']]],
-        'fill-opacity': ['get', ['get', 'fillOpacity', ['get', 'style']]],
-        'fill-outline-color': ['get', ['get', 'strokeColor', ['get', 'style']]],
+        'fill-color': [
+          'interpolate',
+          ['linear'],
+          ['get', 'evs_per_capita'],
+          0, '#ff0000',    // Red for no EV stations
+          0.0001, '#ffff00', // Yellow for some stations
+          0.001, '#00ff00'   // Green for many stations
+        ],
+        'fill-opacity': 0.5,
+        'fill-outline-color': '#000000'
       }
     });
 
-    // Add EV station points layer
+    // Add hover effect
     map.addLayer({
-      id: 'ev-points',
-      type: 'circle',
-      source: 'ev-data',
-      filter: ['==', ['geometry-type'], 'Point'],
+      id: 'zip-polygons-hover',
+      type: 'line',
+      source: 'zip-data',
       paint: {
-        'circle-radius': ['get', ['get', 'radius', ['get', 'style']]],
-        'circle-color': ['get', ['get', 'color', ['get', 'style']]],
-        'circle-opacity': 0.8
-      }
+        'line-color': '#000000',
+        'line-width': 2
+      },
+      filter: ['==', ['get', 'ZIP'], '']
     });
   };
 
@@ -106,8 +102,8 @@ export default function Circle30Map({ visualization }: Circle30MapProps) {
 
         // Wait for map to load before adding features
         map.on('load', () => {
-          if (visualization?.features) {
-            addFeaturesToMap(map, visualization.features);
+          if (geojsonData) {
+            addFeaturesToMap(map, geojsonData);
           }
         });
       } catch (err: any) {
@@ -126,11 +122,11 @@ export default function Circle30Map({ visualization }: Circle30MapProps) {
   // Handle visualization updates
   useEffect(() => {
     const map = mapRef.current;
-    if (map && visualization?.features) {
-      console.log('Visualization prop received:', visualization);
-      addFeaturesToMap(map, visualization.features);
+    if (map && geojsonData) {
+      console.log('Adding features to map:', geojsonData);
+      addFeaturesToMap(map, geojsonData);
     }
-  }, [visualization]); // Update when visualization changes
+  }, [geojsonData]); // Update when visualization changes
 
   return (
     <div style={{ width: '100%', height: '100%', backgroundColor: '#0F172A', position: 'absolute', inset: 0 }}>

@@ -10,10 +10,11 @@ interface Message {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5002';
 
-export default function AskAI({ onQuery, onVisualizationUpdate }: { 
-  onQuery: (query: string) => void;
-  onVisualizationUpdate: (visualization: any) => void;
-}) {
+interface AskAIProps {
+  onResponse: (response: AIResponse) => void;
+}
+
+export default function AskAI({ onResponse }: AskAIProps) {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -39,17 +40,15 @@ export default function AskAI({ onQuery, onVisualizationUpdate }: {
           body: JSON.stringify({ message: input })
         });
         const data: AIResponse = await res.json();
-        console.log('Backend response:', data);
         
-        // Handle visualization data if present
-        if (data.visualizations?.[0]) {
-          console.log('Visualization data:', data.visualizations[0].data);
-          onVisualizationUpdate(data.visualizations[0].data);
+        if (data.error) {
+          throw new Error(data.error);
         }
 
+        onResponse(data);  // Pass the entire response to parent
+        
         setIsTyping(true);
         setTypingMessage('');
-        // Animate the assistant's response
         typeAssistantMessage(data.text, () => {
           setIsTyping(false);
           setTypingMessage(null);
@@ -58,7 +57,6 @@ export default function AskAI({ onQuery, onVisualizationUpdate }: {
             { role: 'assistant', content: data.text }
           ]);
         });
-        onQuery(input);
       } catch (error) {
         let errorMessage = 'Sorry, there was an error processing your request.';
         if (error instanceof Error) {
