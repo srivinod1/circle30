@@ -37,56 +37,41 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
     return await res.json();
   };
 
-  const addFeaturesToMap = (map: maplibregl.Map, geojsonData: AIResponse['geojson']) => {
-    // Remove layers first, then source
+  const addFeaturesToMap = (map: maplibregl.Map, geojsonData: any) => {
+    console.log('Map instance:', map);
+    console.log('Attempting to add features:', geojsonData);
+
+    // Remove existing layers if any
     if (map.getSource('zip-data')) {
-      // Remove layers in correct order
-      if (map.getLayer('zip-polygons-hover')) {
-        map.removeLayer('zip-polygons-hover');
-      }
-      if (map.getLayer('zip-polygons')) {
-        map.removeLayer('zip-polygons');
-      }
-      // Remove source after all layers are removed
+      console.log('Removing existing layers');
+      if (map.getLayer('zip-polygons-hover')) map.removeLayer('zip-polygons-hover');
+      if (map.getLayer('zip-polygons')) map.removeLayer('zip-polygons');
       map.removeSource('zip-data');
     }
 
-    // Add new source with all features
-    map.addSource('zip-data', {
-      type: 'geojson',
-      data: geojsonData
-    });
+    try {
+      // Add new source
+      map.addSource('zip-data', {
+        type: 'geojson',
+        data: geojsonData
+      });
+      console.log('Added source successfully');
 
-    // Add ZIP code polygons layer
-    map.addLayer({
-      id: 'zip-polygons',
-      type: 'fill',
-      source: 'zip-data',
-      paint: {
-        'fill-color': [
-          'interpolate',
-          ['linear'],
-          ['get', 'evs_per_capita'],
-          0, '#ff0000',    // Red for no EV stations
-          0.0001, '#ffff00', // Yellow for some stations
-          0.001, '#00ff00'   // Green for many stations
-        ],
-        'fill-opacity': 0.5,
-        'fill-outline-color': '#000000'
-      }
-    });
-
-    // Add hover effect layer
-    map.addLayer({
-      id: 'zip-polygons-hover',
-      type: 'line',
-      source: 'zip-data',
-      paint: {
-        'line-color': '#000000',
-        'line-width': 2
-      },
-      filter: ['==', ['get', 'ZIP'], '']
-    });
+      // Add ZIP code polygons layer
+      map.addLayer({
+        id: 'zip-polygons',
+        type: 'fill',
+        source: 'zip-data',
+        paint: {
+          'fill-color': '#ff0000',  // Simplified color for testing
+          'fill-opacity': 0.5,
+          'fill-outline-color': '#000000'
+        }
+      });
+      console.log('Added layer successfully');
+    } catch (error) {
+      console.error('Error adding features to map:', error);
+    }
   };
 
   useEffect(() => {
@@ -130,8 +115,15 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
   useEffect(() => {
     const map = mapRef.current;
     if (map && geojsonData) {
-      console.log('Adding features to map:', geojsonData);
-      addFeaturesToMap(map, geojsonData);
+      console.log('Map style loaded:', map.isStyleLoaded());
+      if (map.isStyleLoaded()) {
+        addFeaturesToMap(map, geojsonData);
+      } else {
+        map.once('style.load', () => {
+          console.log('Style now loaded, adding features');
+          addFeaturesToMap(map, geojsonData);
+        });
+      }
     }
   }, [geojsonData]); // Update when visualization changes
 

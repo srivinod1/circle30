@@ -39,13 +39,15 @@ export default function AskAI({ onResponse }: AskAIProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ message: input })
         });
-        const data: AIResponse = await res.json();
+        const data = await res.json();
+        console.log('Raw backend response:', data);
+        console.log('GeoJSON from backend:', data.geojson);
         
         if (data.error) {
           throw new Error(data.error);
         }
 
-        onResponse(data);  // Pass the entire response to parent
+        onResponse(data);
         
         setIsTyping(true);
         setTypingMessage('');
