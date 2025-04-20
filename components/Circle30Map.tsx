@@ -97,10 +97,10 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
             'interpolate',
             ['linear'],
             ['get', 'evs_per_capita'],
-            0, '#fff5f0',    // Lightest red
-            0.0001, '#fee0d2', // Light red
-            0.0002, '#fc9272', // Medium red
-            0.0003, '#de2d26'  // Dark red
+            0, '#ff0000',    // Bright red for lowest
+            0.0001, '#cc0000', // Darker red
+            0.0002, '#990000', // Even darker red
+            0.0003, '#660000'  // Darkest red
           ],
           'fill-opacity': 0.7
         }
@@ -144,15 +144,16 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
             popup = new maplibregl.Popup({
               closeButton: false,
               closeOnClick: false,
-              offset: 10
+              offset: 10,
+              className: 'custom-popup'
             })
               .setLngLat(e.lngLat)
               .setHTML(`
-                <div class="p-2">
-                  <h3 class="font-bold">ZIP Code ${zipCode}</h3>
-                  <p>Population: ${population.toLocaleString()}</p>
-                  <p>EV Charging Stations: ${evCount}</p>
-                  <p>EVs per Capita: ${evPerCapita.toFixed(6)}</p>
+                <div class="p-2 bg-white text-black">
+                  <h3 class="font-bold text-lg">ZIP Code ${zipCode}</h3>
+                  <p class="text-base">Population: ${population.toLocaleString()}</p>
+                  <p class="text-base">EV Charging Stations: ${evCount}</p>
+                  <p class="text-base">EVs per Capita: ${evPerCapita.toFixed(6)}</p>
                 </div>
               `)
               .addTo(mapRef.current!);
