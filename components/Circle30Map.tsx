@@ -38,9 +38,16 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
   };
 
   const addFeaturesToMap = (map: maplibregl.Map, geojsonData: AIResponse['geojson']) => {
-    // Remove existing layers if any
+    // Remove layers first, then source
     if (map.getSource('zip-data')) {
-      map.removeLayer('zip-polygons');
+      // Remove layers in correct order
+      if (map.getLayer('zip-polygons-hover')) {
+        map.removeLayer('zip-polygons-hover');
+      }
+      if (map.getLayer('zip-polygons')) {
+        map.removeLayer('zip-polygons');
+      }
+      // Remove source after all layers are removed
       map.removeSource('zip-data');
     }
 
@@ -69,7 +76,7 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
       }
     });
 
-    // Add hover effect
+    // Add hover effect layer
     map.addLayer({
       id: 'zip-polygons-hover',
       type: 'line',
