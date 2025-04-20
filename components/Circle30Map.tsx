@@ -97,10 +97,10 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
             'interpolate',
             ['linear'],
             ['get', 'evs_per_capita'],
-            0, '#ffeda0',    // Yellow for lowest
-            0.0001, '#feb24c', // Orange
-            0.0002, '#f03b20', // Red
-            0.0003, '#bd0026'  // Dark red for highest
+            0, '#fff5f0',    // Lightest red
+            0.0001, '#fee0d2', // Light red
+            0.0002, '#fc9272', // Medium red
+            0.0003, '#de2d26'  // Dark red
           ],
           'fill-opacity': 0.7
         }
