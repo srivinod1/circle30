@@ -118,6 +118,26 @@ export default function Circle30Map({ geojsonData }: Circle30MapProps) {
         }
       });
 
+      // Add text layer for ZIP codes
+      console.log('Adding text layer');
+      mapRef.current.addLayer({
+        id: 'zip-codes-text',
+        type: 'symbol',
+        source: 'zip-codes',
+        layout: {
+          'text-field': ['get', 'ZIP'],
+          'text-size': 12,
+          'text-anchor': 'center',
+          'text-allow-overlap': false,
+          'text-ignore-placement': false
+        },
+        paint: {
+          'text-color': '#000',
+          'text-halo-color': '#fff',
+          'text-halo-width': 2
+        }
+      });
+
       // Add hover effect
       mapRef.current.on('mousemove', 'zip-codes-fill', (e) => {
         if (e.features && e.features.length > 0) {
