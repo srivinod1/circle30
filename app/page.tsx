@@ -16,7 +16,7 @@ export default function Home() {
   return (
     <main className="h-screen flex flex-col bg-[#0F172A] text-[#E2E8F0] font-sans relative overflow-hidden">
       <header className="p-4 border-b border-[#1E293B] text-xl font-bold z-50 bg-[#0F172A]">
-        Circle30
+        US EV CHARGING STATIONS
       </header>
 
       <div className="flex-1 relative">
