@@ -176,7 +176,7 @@ export default function AskAI({ onResponse }: AskAIProps) {
             }`}
             disabled={isLoading || isTyping}
           >
-            {isLoading || isTyping ? 'Processing...' : 'Ask AI'}
+            {isLoading || isTyping ? 'Analyzing...' : 'Analyze Map'}
           </button>
         </div>
       </form>
