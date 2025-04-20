@@ -166,8 +166,8 @@ export default function AskAI({ onResponse }: AskAIProps) {
             onChange={(e) => setInput(e.target.value)}
             className="w-full bg-gray-700 text-white placeholder-gray-400 placeholder:italic outline-none px-4 py-2 rounded-lg border border-gray-600 focus:border-indigo-500 transition-colors resize-none"
             disabled={isLoading || isTyping}
-            rows={4}
-            style={{ minHeight: '80px', maxHeight: '120px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}
+            rows={5}
+            style={{ minHeight: '100px', maxHeight: '150px', overflowY: 'auto', whiteSpace: 'pre-wrap' }}
           />
           <button
             type="submit"
