@@ -36,39 +36,28 @@ export default function AskAI({ onResponse }: AskAIProps) {
       // Clear input immediately after submission
       setInput('');
       try {
-        const res = await fetch(BACKEND_URL, {
+        const res = await fetch('/api/chat', {
           method: "POST",
           headers: { 
             "Content-Type": "application/json",
             "Accept": "application/json"
           },
           body: JSON.stringify({
-            jsonrpc: '2.0',
-            id: Date.now(),
-            method: 'orchestrator.chat',
-            params: { 
-              message: input, 
-              user_id: 'default'
-            }
+            message: input,
+            user_id: 'default'
           })
         });
         const data = await res.json();
         console.log('Raw backend response:', data);
         
         if (data.error) {
-          throw new Error(data.error.message || data.error);
-        }
-
-        // Extract the actual response from the JSON-RPC result
-        const result = data.result;
-        if (!result) {
-          throw new Error('No result in response');
+          throw new Error(data.error);
         }
 
         // Parse GeoJSON string into object if it's a string
         const parsedData: ParsedAIResponse = {
-          text: result.response || result.text,
-          geojson: result.geojson ? (typeof result.geojson === 'string' ? JSON.parse(result.geojson) : result.geojson) : null
+          text: data.text,
+          geojson: data.geojson ? (typeof data.geojson === 'string' ? JSON.parse(data.geojson) : data.geojson) : null
         };
 
         console.log('Parsed response:', {
