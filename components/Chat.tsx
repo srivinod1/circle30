@@ -22,7 +22,7 @@ export default function Chat() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ message: input }),
+        body: JSON.stringify({ message: input, user_id: 'default' }),
       });
 
       if (!response.ok) {

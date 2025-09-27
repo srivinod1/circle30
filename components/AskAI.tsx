@@ -8,7 +8,7 @@ interface Message {
   content: string;
 }
 
-const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5002';
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'https://web-production-5f9ea.up.railway.app';
 
 interface AskAIProps {
   onResponse: (response: ParsedAIResponse) => void;
@@ -36,27 +36,39 @@ export default function AskAI({ onResponse }: AskAIProps) {
       // Clear input immediately after submission
       setInput('');
       try {
-        const res = await fetch(`${BACKEND_URL}/chat`, {
+        const res = await fetch(BACKEND_URL, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ message: input })
+          headers: { 
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+          },
+          body: JSON.stringify({
+            jsonrpc: '2.0',
+            id: Date.now(),
+            method: 'orchestrator.chat',
+            params: { 
+              message: input, 
+              user_id: 'default'
+            }
+          })
         });
         const data = await res.json();
-        console.log('Raw backend response:', {
-          hasGeojson: !!data.geojson,
-          geojsonType: typeof data.geojson,
-          hasText: !!data.text,
-          textStructure: data.text
-        });
+        console.log('Raw backend response:', data);
         
         if (data.error) {
-          throw new Error(data.error);
+          throw new Error(data.error.message || data.error);
+        }
+
+        // Extract the actual response from the JSON-RPC result
+        const result = data.result;
+        if (!result) {
+          throw new Error('No result in response');
         }
 
         // Parse GeoJSON string into object if it's a string
         const parsedData: ParsedAIResponse = {
-          text: data.text,
-          geojson: typeof data.geojson === 'string' ? JSON.parse(data.geojson) : data.geojson
+          text: result.response || result.text,
+          geojson: result.geojson ? (typeof result.geojson === 'string' ? JSON.parse(result.geojson) : result.geojson) : null
         };
 
         console.log('Parsed response:', {
