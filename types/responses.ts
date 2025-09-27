@@ -16,13 +16,13 @@ export interface AIResponse {
 }
 
 export interface ParsedAIResponse {
-  text: AIResponse['text'];
+  text: AIResponse['text'] | string; // Support both structured data and simple string responses
   geojson: FeatureCollection<Polygon, {
     ZIP: string;
     population: number;
     ev_poi_count: number;
     evs_per_capita: number;
-  }>;
+  }> | null;
 }
 
 export interface ZipCodeFeature {

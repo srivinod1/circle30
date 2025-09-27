@@ -54,11 +54,22 @@ export default function AskAI({ onResponse }: AskAIProps) {
           throw new Error(data.error);
         }
 
-        // Parse GeoJSON string into object if it's a string
-        const parsedData: ParsedAIResponse = {
-          text: data.text,
-          geojson: data.geojson ? (typeof data.geojson === 'string' ? JSON.parse(data.geojson) : data.geojson) : null
-        };
+        // Handle both old EV analysis format and new TomTom API format
+        let parsedData: ParsedAIResponse;
+        
+        if (typeof data.text === 'string') {
+          // TomTom API returns simple string responses
+          parsedData = {
+            text: data.text as any, // Simple string response
+            geojson: data.geojson ? (typeof data.geojson === 'string' ? JSON.parse(data.geojson) : data.geojson) : null
+          };
+        } else {
+          // Old EV analysis format with structured data
+          parsedData = {
+            text: data.text,
+            geojson: data.geojson ? (typeof data.geojson === 'string' ? JSON.parse(data.geojson) : data.geojson) : null
+          };
+        }
 
         console.log('Parsed response:', {
           text: parsedData.text,
@@ -190,21 +201,31 @@ function formatAnalysisText(textData: ParsedAIResponse['text']): string {
     return 'No analysis data available.';
   }
 
-  let formattedText = `${textData.title}\n\n`;
-
-  if (!textData.zipCodes || !Array.isArray(textData.zipCodes)) {
-    return 'No ZIP code data available.';
+  // Handle TomTom API string responses
+  if (typeof textData === 'string') {
+    return textData;
   }
 
-  textData.zipCodes.forEach((zipData, index) => {
-    formattedText += `${index + 1}. ZIP code ${zipData.zipCode}\n`;
-    formattedText += `   - Population: ${zipData.population}\n`;
-    formattedText += `   - EV Charging Stations: ${zipData.evCount}\n`;
-    formattedText += `   - EV Count per Capita: ${zipData.evCountPerCapita}\n\n`;
-  });
+  // Handle old EV analysis format
+  if (textData && typeof textData === 'object') {
+    let formattedText = `${textData.title}\n\n`;
 
-  formattedText += 'Analysis:\n';
-  formattedText += textData.analysis || 'No analysis available.';
+    if (!textData.zipCodes || !Array.isArray(textData.zipCodes)) {
+      return 'No ZIP code data available.';
+    }
 
-  return formattedText;
+    textData.zipCodes.forEach((zipData, index) => {
+      formattedText += `${index + 1}. ZIP code ${zipData.zipCode}\n`;
+      formattedText += `   - Population: ${zipData.population}\n`;
+      formattedText += `   - EV Charging Stations: ${zipData.evCount}\n`;
+      formattedText += `   - EV Count per Capita: ${zipData.evCountPerCapita}\n\n`;
+    });
+
+    formattedText += 'Analysis:\n';
+    formattedText += textData.analysis || 'No analysis available.';
+
+    return formattedText;
+  }
+
+  return 'No analysis data available.';
 }
